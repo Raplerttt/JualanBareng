@@ -9,14 +9,16 @@ import RecommendedStore from "../components/RecomendedStore";
 
 const HomePages = () => {
   return (
+    <>
     <Main>
       <Navbar />
       <ProductHits />
       <Recommendation />
       <RecommendedCausine />
       <RecommendedStore />
-      <Footer />
     </Main>
+      <Footer />
+    </>
   );
 };
 

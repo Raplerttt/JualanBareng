@@ -32,7 +32,7 @@ const RecommendedStore = () => {
         {store.map((store) => (
           <div key={store.id} className="text-center">
             {/* Gambar Produk dalam bentuk bulat */}
-            <div className="w-32 h-32 mx-auto mb-4 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden">
+            <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden">
               <img
                 src={store.image}
                 alt={store.name}
