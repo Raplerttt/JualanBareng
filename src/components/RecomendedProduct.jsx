@@ -1,9 +1,11 @@
-import React from 'react';
-import { FaStar } from 'react-icons/fa';
+import React, { useState } from 'react';
+import { FaStar, FaHeart } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 
-const ProductRecommendation = () => {
+const ProductRecommendation = ({ categoryName }) => {
+  const [favorites, setFavorites] = useState({});
+
   const products = [
     {
       id: 1,
@@ -39,9 +41,16 @@ const ProductRecommendation = () => {
     },
   ];
 
+  const handleFavoriteToggle = (id) => {
+    setFavorites((prevFavorites) => ({
+      ...prevFavorites,
+      [id]: !prevFavorites[id], // Toggle favorite status
+    }));
+  };
+
   return (
     <div className="container mx-auto py-12">
-      <h2 className="text-2xl font-semibold text-center mb-8">Recommended Products</h2>
+      <h2 className="text-2xl font-semibold text-center mb-8">{categoryName}</h2>
       <div className="flex items-center justify-between space-x-8">
         <div className="w-full">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
@@ -62,6 +71,14 @@ const ProductRecommendation = () => {
                       src={product.image}
                       alt={product.name}
                     />
+                    {/* Love Icon (Heart) at the top right of the image */}
+                    <div className="absolute top-2 right-2 text-red-500 cursor-pointer">
+                      <FaHeart
+                        size={24}
+                        onClick={() => handleFavoriteToggle(product.id)}
+                        className={favorites[product.id] ? 'text-red-500' : 'text-gray-400'}
+                      />
+                    </div>
                   </a>
                   <div className="mt-4 px-3 pb-3">
                     <a href="#">

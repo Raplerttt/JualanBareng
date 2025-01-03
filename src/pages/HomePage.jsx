@@ -13,9 +13,9 @@ const HomePages = () => {
     <Main>
       <Navbar />
       <ProductHits />
-      <Recommendation />
+      <Recommendation categoryNames={"Recomended Product"} />
       <RecommendedCausine />
-      <RecommendedStore />
+      <RecommendedStore  />
     </Main>
       <Footer />
     </>

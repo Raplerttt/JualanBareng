@@ -35,6 +35,18 @@ const Navbar = () => {
   const goToHome = () => {
     navigate('/');
   };
+
+  const goToChat = () => {
+    navigate('/chat');
+  };
+
+  const goToFavorite = () => {
+    navigate('/favorite');
+  };
+
+  const goToCart = () => {
+    navigate('/cart');
+  };
   return (
     <header className="bg-white rounded-[50px]">
       <div className="container mx-auto flex items-center justify-between py-4 px-6">
@@ -94,9 +106,9 @@ const Navbar = () => {
 
         {/* Icons and Buttons (Desktop) */}
         <div className="hidden md:flex items-center space-x-6">
-          <FaHeart className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
-          <FaCommentDots className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
-          <FaShoppingCart className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
+          <FaHeart onClick={goToFavorite} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
+          <FaCommentDots onClick={goToChat} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800"/>
+          <FaShoppingCart onClick={goToCart} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
           <button onClick={goToLogin} className="text-green-600 font-medium hover:underline">Login</button>
           <button
             onClick={goToRegister}
@@ -149,9 +161,9 @@ const Navbar = () => {
             <div className="flex justify-between items-center mt-4">
               {/* Icons on the left */}
               <div className="flex space-x-6">
-                <FaHeart className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
-                <FaCommentDots className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
-                <FaShoppingCart className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
+                <FaHeart onClick={goToFavorite} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
+                <FaCommentDots onClick={goToChat} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
+                <FaShoppingCart onClick={goToCart} className="text-gray-600 w-6 h-6 cursor-pointer hover:text-gray-800" />
               </div>
 
               {/* Buttons on the right */}
