@@ -6,13 +6,15 @@ import Footer from "../components/FooterComponents";
 
 const UserRegistPages = () => {
   return (
+    <>
     <Main>
       <Navbar />
       <div className="flex-grow py-8">
         <RegisterFormUser />
       </div>
-      <Footer />
     </Main>
+      <Footer />
+    </>
   );
 };
 
