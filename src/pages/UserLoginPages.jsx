@@ -1,19 +1,19 @@
 import React from "react";
 import Main from "../components/Main";
 import Navbar from "../components/NavbarComponents";
-import RegisterForm from "../user/UserRegisterForm";
+import LoginFormUser from "../user/UserLoginForm";
 import Footer from "../components/FooterComponents";
 
-const RegistPages = () => {
+const UserLoginPages = () => {
   return (
     <Main>
       <Navbar />
-      <div className="bg-gray-100 flex-grow py-8">
-        <RegisterForm />
+      <div className="flex-grow py-8">
+        <LoginFormUser/>
       </div>
       <Footer />
     </Main>
   );
 };
 
-export default RegistPages;
+export default UserLoginPages;

@@ -1,16 +1,42 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const AuthForm = ({
+const AuthFormUser = ({
   formType = "login", // Default formType is "login"
   buttonText = "Login",
   onSubmit,
 }) => {
+  const navigate = useNavigate(); // Initialize the navigate hook
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (formType === "login") {
+      // Perform login logic here (like authentication checks)
+      console.log("Logging in...");
+      
+      // Redirect to home page after login
+      navigate("/"); // Redirect to home page
+    } else {
+      // Perform registration logic here
+      console.log("Registering...");
+      
+      // Optionally, redirect to user login page after registration
+      // navigate("/user/login");
+    }
+
+    // Call the parent onSubmit if provided
+    if (onSubmit) {
+      onSubmit(e);
+    }
+  };
+
   return (
     <div className="w-full p-8">
       <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
         {formType === "login" ? "Login" : "Register"} as a User
       </h2>
-      <form className="space-y-4" onSubmit={onSubmit}>
+      <form className="space-y-4" onSubmit={handleSubmit}>
         {formType === "register" && (
           <>
             <div>
@@ -80,7 +106,7 @@ const AuthForm = ({
             {formType === "login" && (
               <div className="mt-4 text-sm">
                 <span className="text-gray-600">Don't have an account? </span>
-                <a href="/" className="text-blue-500 hover:underline">
+                <a href="/user/register" className="text-blue-500 hover:underline">
                   Register
                 </a>
               </div>
@@ -102,7 +128,7 @@ const AuthForm = ({
       {formType === "register" && (
         <div className="mt-4 text-sm">
           <span className="text-gray-600">Already have an account? </span>
-          <a href="/login" className="text-blue-500 hover:underline">
+          <a href="/user/login" className="text-blue-500 hover:underline">
             Login
           </a>
         </div>
@@ -111,4 +137,4 @@ const AuthForm = ({
   );
 };
 
-export default AuthForm;
+export default AuthFormUser;

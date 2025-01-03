@@ -1,5 +1,7 @@
 import React from 'react';
 import { FaStar } from 'react-icons/fa';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 
 const ProductRecommendation = () => {
   const products = [
@@ -40,44 +42,49 @@ const ProductRecommendation = () => {
   return (
     <div className="container mx-auto py-12">
       <h2 className="text-2xl font-semibold text-center mb-8">Recommended Products</h2>
-      {/* Produk Populer dan Promo Section */}
       <div className="flex items-center justify-between space-x-8">
-        {/* Produk Populer (Lebih lebar) */}
         <div className="w-full">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4">
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="group border-white flex flex-col w-full overflow-hidden rounded-lg border bg-white shadow-md"
-              >
-                <a className="relative mx-2 mt-2 flex h-48 overflow-hidden rounded-xl" href="#">
-                  <img
-                    className="peer absolute top-0 right-0 h-full w-full object-cover"
-                    src={product.image}
-                    alt={product.name}
-                  />
-                </a>
-                <div className="mt-4 px-3 pb-3">
-                  <a href="#">
-                    <h5 className="text-xl tracking-tight text-Black">{product.name}</h5>
+            {products.map((product) => {
+              const { ref, inView } = useInView({ threshold: 0.2 });
+              return (
+                <motion.div
+                  ref={ref}
+                  key={product.id}
+                  initial={{ opacity: 0, y: 50 }}
+                  animate={inView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
+                  transition={{ duration: 0.9, ease: 'easeOut' }}
+                  className="group border-white flex flex-col w-full overflow-hidden rounded-lg border bg-white shadow-md"
+                >
+                  <a className="relative mx-2 mt-2 flex h-48 overflow-hidden rounded-xl" href="#">
+                    <img
+                      className="peer absolute top-0 right-0 h-full w-full object-cover"
+                      src={product.image}
+                      alt={product.name}
+                    />
                   </a>
-                  <div className="mt-2 mb-3 items-center text-sm text-black">
-                    <p>Category: {product.category}</p>
-                    <p>Address: {product.address}</p>
-                  </div>
-                  <div className="flex justify-end items-center">
-                    <div className="flex">
-                      {Array.from({ length: 5 }, (_, index) => (
-                        <FaStar
-                          key={index}
-                          className={`text-yellow-400 ${index < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-400'}`}
-                        />
-                      ))}
+                  <div className="mt-4 px-3 pb-3">
+                    <a href="#">
+                      <h5 className="text-xl tracking-tight text-Black">{product.name}</h5>
+                    </a>
+                    <div className="mt-2 mb-3 items-center text-sm text-black">
+                      <p>Category: {product.category}</p>
+                      <p>Address: {product.address}</p>
+                    </div>
+                    <div className="flex justify-end items-center">
+                      <div className="flex">
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <FaStar
+                            key={index}
+                            className={`text-yellow-400 ${index < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-400'}`}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </div>

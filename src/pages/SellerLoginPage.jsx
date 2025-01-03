@@ -1,19 +1,19 @@
 import React from "react";
 import Main from "../components/Main";
 import Navbar from "../components/NavbarComponents";
-import LoginForm from "../user/UserLoginForm";
+import LoginFormSeller from "../seller/SellerLoginForm";
 import Footer from "../components/FooterComponents";
 
-const LoginPages = () => {
+const SellerLoginPages = () => {
   return (
     <Main>
       <Navbar />
-      <div className="bg-gray-100 flex-grow py-8">
-        <LoginForm/>
+      <div className="flex-grow py-8">
+        <LoginFormSeller />
       </div>
       <Footer />
     </Main>
   );
 };
 
-export default LoginPages;
+export default SellerLoginPages;

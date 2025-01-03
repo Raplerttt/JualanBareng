@@ -1,4 +1,6 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 
 const RecommendedStore = () => {
   // Dummy Data untuk Produk Toko
@@ -29,20 +31,28 @@ const RecommendedStore = () => {
     <div className="container mx-auto py-12">
       <h2 className="text-2xl font-semibold text-center mb-8">Recommended Store</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-        {store.map((store) => (
-          <div key={store.id} className="text-center">
-            {/* Gambar Produk dalam bentuk bulat */}
-            <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden">
-              <img
-                src={store.image}
-                alt={store.name}
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-            {/* Nama Toko */}
-            <h3 className="text-lg font-semibold text-gray-800">{store.name}</h3>
-          </div>
-        ))}
+      {store.map((store, index) => {
+          const { ref, inView } = useInView({ threshold: 0.2 });
+          return (
+            <motion.div
+              ref={ref}
+              key={store.id}
+              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
+              animate={inView ? { opacity: 1, scale: 1, rotate: 0 } : { opacity: 0, scale: 0.8, rotate: -5 }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="text-center"
+            >
+              <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden">
+                <img
+                  src={store.image}
+                  alt={store.name}
+                  className="w-full h-full object-cover rounded-full"
+                />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">{store.name}</h3>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );

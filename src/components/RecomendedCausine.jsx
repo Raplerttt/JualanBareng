@@ -1,4 +1,6 @@
 import React from 'react';
+import { motion } from 'framer-motion';
+import { useInView } from 'react-intersection-observer';
 
 const RecommendedCausine = () => {
   // Contoh data untuk produk rekomendasi
@@ -41,20 +43,23 @@ const RecommendedCausine = () => {
     <div className="container mx-auto py-12">
       <h2 className="text-2xl font-semibold text-center mb-8">Recommended Causine</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="bg-white rounded-lg shadow-lg overflow-hidden relative"
-          >
-            {/* Gambar Produk dibalut persegi panjang */}
-            <div className="w-full h-48 bg-gray-200">
-              <img
-                src={product.image}
-                className="w-full h-full object-cover rounded-md"
-              />
-            </div>
-          </div>
-        ))}
+      {products.map((product, index) => {
+          const { ref, inView } = useInView({ threshold: 0.2 });
+          return (
+            <motion.div
+              ref={ref}
+              key={product.id}
+              initial={{ opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+              animate={inView ? { opacity: 1, x: 0 } : { opacity: 0, x: index % 2 === 0 ? -50 : 50 }}
+              transition={{ duration: 0.9, ease: 'easeOut' }}
+              className="bg-white rounded-lg shadow-lg overflow-hidden relative"
+            >
+              <div className="w-full h-48 bg-gray-200">
+                <img src={product.image} className="w-full h-full object-cover rounded-md" alt={product.name} />
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
