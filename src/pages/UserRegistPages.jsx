@@ -1,8 +1,8 @@
 import React from "react";
-import Main from "../components/Main";
-import Navbar from "../components/NavbarComponents";
+import Main from "../components/layout/Main";
+import Navbar from "../components/layout/NavbarComponents";
 import RegisterFormUser from "../user/UserRegisterForm";
-import Footer from "../components/FooterComponents";
+import Footer from "../components/layout/FooterComponents";
 
 const UserRegistPages = () => {
   return (

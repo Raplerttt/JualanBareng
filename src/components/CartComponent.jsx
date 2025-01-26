@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import FormPaymentComponents from './FormPaymentComponents';
+import FormPaymentComponents from './forms/FormPaymentComponents';
 
 const CartComponent = () => {
   const [cart, setCart] = useState([
@@ -38,7 +38,7 @@ const CartComponent = () => {
   };
 
   return (
-    <div className="container mx-auto py-12 px-4">
+    <div className="mx-auto py-12 px-4">
       <h2 className="text-3xl font-bold text-center mb-8">Shopping Cart</h2>
       <div className="space-y-6">
         {cart.map((product) => (

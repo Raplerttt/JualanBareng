@@ -52,7 +52,7 @@ const ChatComponents = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className=" mx-auto py-8">
       <div className="flex flex-col md:flex-row bg-gray-100 rounded-lg shadow-md overflow-hidden">
         {/* Sidebar Kiri */}
         <div className="w-full md:w-1/4 bg-white shadow-lg p-4">

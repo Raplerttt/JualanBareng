@@ -1,9 +1,3 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* index.css atau App.css */
-body {
-    background-color: #C2FFC7;
-  }
-  

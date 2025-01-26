@@ -9,7 +9,7 @@ const DetailStoreComponents = () => {
   };
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="mx-auto py-8 px-4">
       <div className="flex items-start space-x-2">
         {/* Left Side: Store Photo */}
         <div className="w-1/4">

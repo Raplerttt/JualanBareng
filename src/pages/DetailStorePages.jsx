@@ -1,7 +1,7 @@
 import React from 'react'
-import Main from '../components/Main';
-import Navbar from '../components/NavbarComponents';
-import Footer from '../components/FooterComponents';
+import Main from '../components/layout/Main';
+import Navbar from '../components/layout/NavbarComponents';
+import Footer from '../components/layout/FooterComponents';
 import DetailStoreComponents from '../components/DetailStoreComponents';
 import ProductRecommendation from '../components/RecomendedProduct';
 

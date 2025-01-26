@@ -3,7 +3,7 @@ import AuthForm from '../components/AuthFormSeller'; // Ensure AuthForm is prope
 
 const SellerLoginForm = () => {
   return (
-    <div className="items-center justify-center min-h-screen">
+    <div className="items-center justify-center">
       <div className="container mx-auto flex flex-col md:flex-row rounded-lg shadow-lg overflow-hidden">
         {/* Left Side (Mobile Version) */}
         <div className="w-full md:w-1/2 bg-green-50 p-8 flex flex-col items-center justify-center space-y-4">

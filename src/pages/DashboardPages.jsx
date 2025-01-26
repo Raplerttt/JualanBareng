@@ -1,20 +1,19 @@
-import React from "react";
+import React from 'react'
 import Main from "../components/layout/Main";
 import Navbar from "../components/layout/NavbarComponents";
+import SellerDashboard from '../seller/DashboardSeller';
 import Footer from "../components/layout/FooterComponents";
-import ChangeProfilUser from "../user/ChangeProfilUser";
 
-
-const UserProfilPages = () => {
+const DashboardPages = () => {
   return (
     <>
     <Main>
       <Navbar />
-      <ChangeProfilUser />
+      <SellerDashboard />
     </Main>
       <Footer />
     </>
-  );
-};
+  )
+}
 
-export default UserProfilPages;
+export default DashboardPages

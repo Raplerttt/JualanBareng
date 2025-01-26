@@ -15,7 +15,6 @@ import Loading from "./components/Loading"; // Import komponen loading
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
   const location = useLocation(); // Untuk mendeteksi perubahan halaman
-
   useEffect(() => {
     startLoading(); // Tampilkan loading saat halaman berubah
     setTimeout(() => stopLoading(), 1000); // Simulasikan loading selama 1 detik

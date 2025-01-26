@@ -1,8 +1,8 @@
 import React from 'react'
-import Main from '../components/Main';
+import Main from '../components/layout/Main';
 import DetailOrderComponents from '../components/DetailOrderComponents';
-import Navbar from '../components/NavbarComponents';
-import Footer from '../components/FooterComponents';
+import Navbar from '../components/layout/NavbarComponents';
+import Footer from '../components/layout/FooterComponents';
 
 const DetailOrderPages = () => {
     return (

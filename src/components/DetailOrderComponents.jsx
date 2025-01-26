@@ -6,7 +6,7 @@ const DetailOrderComponents = () => {
   const totalPrice = pricePerItem * quantity;
 
   return (
-    <div className="container mx-auto py-8 px-4">
+    <div className="mx-auto py-8 px-4">
       {/* Order Details in a single white background */}
       <div className="bg-white shadow-lg rounded-lg p-6 flex flex-col md:flex-row md:items-center">
         {/* Left Side - Food Image */}

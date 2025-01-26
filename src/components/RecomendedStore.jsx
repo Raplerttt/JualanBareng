@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 
 const RecommendedStore = () => {
-  // Dummy Data untuk Produk Toko
-  const store = [
+  const stores = [
     {
       id: 1,
       name: 'Nike Store',
@@ -28,28 +27,30 @@ const RecommendedStore = () => {
   ];
 
   return (
-    <div className="container mx-auto py-12">
-      <h2 className="text-2xl font-semibold text-center mb-8">Recommended Store</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-      {store.map((store, index) => {
+    <div className="mx-auto py-12 px-4">
+      <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">Recommended Stores</h2>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8">
+        {stores.map((store, index) => {
           const { ref, inView } = useInView({ threshold: 0.2 });
           return (
             <motion.div
               ref={ref}
               key={store.id}
-              initial={{ opacity: 0, scale: 0.8, rotate: -5 }}
-              animate={inView ? { opacity: 1, scale: 1, rotate: 0 } : { opacity: 0, scale: 0.8, rotate: -5 }}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={inView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.6, ease: 'easeOut' }}
-              className="text-center"
+              className="flex flex-col items-center group"
             >
-              <div className="w-48 h-48 mx-auto mb-4 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden">
+              <div className="w-48 h-48 bg-gray-200 flex justify-center items-center rounded-full overflow-hidden shadow-lg group-hover:shadow-xl transition-shadow duration-300">
                 <img
                   src={store.image}
                   alt={store.name}
                   className="w-full h-full object-cover rounded-full"
                 />
               </div>
-              <h3 className="text-lg font-semibold text-gray-800">{store.name}</h3>
+              <h3 className="mt-4 text-lg font-medium text-gray-800 group-hover:text-blue-600 transition-colors duration-300">
+                {store.name}
+              </h3>
             </motion.div>
           );
         })}

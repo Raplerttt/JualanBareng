@@ -49,7 +49,7 @@ const Navbar = () => {
   };
   return (
     <header className="bg-white rounded-[50px]">
-      <div className="container mx-auto flex items-center justify-between py-4 px-6">
+      <div className="container mx-auto flex items-center justify-between py-2 px-4">
         {/* Logo and Category */}
         <div className="flex items-center space-x-4">
           <button>
@@ -70,7 +70,7 @@ const Navbar = () => {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute left-0 mt-64 w-48 rounded-lg shadow-lg z-10">
+              <div className="absolute left-0 mt-64 w-48 rounded-lg shadow-lg z-10 bg-white">
                 <ul className="py-4">
                   {['Category 1', 'Category 2', 'Category 3', 'Category 4'].map((category) => (
                     <li
