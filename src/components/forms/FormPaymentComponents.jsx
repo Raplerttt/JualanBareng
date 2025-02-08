@@ -19,7 +19,7 @@ const FormPaymentComponents = ({ showPopup, closePopup, totalPrice, totalItems }
     e.preventDefault();
     if (paymentMethod && deliveryOption) {
       setNotification(true);
-      setTimeout(() => closePopup(), 500); // Auto-hide notification after 2 seconds
+      setTimeout(() => closePopup(), 2000); // Auto-hide notification after 2 seconds
     } else {
       alert('Please select both payment method and delivery option!');
     }

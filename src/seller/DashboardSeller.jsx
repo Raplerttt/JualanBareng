@@ -54,6 +54,7 @@ const SellerDashboard = () => {
   // State for toggling order list and feedback visibility
   const [showOrders, setShowOrders] = useState(false);
   const [showFeedbacks, setShowFeedbacks] = useState(false);
+  const [showProducts, setShowProducts] = useState(false); // New state for product visibility
 
   // State for orders and their messages
   const [orders, setOrders] = useState([
@@ -69,9 +70,14 @@ const SellerDashboard = () => {
     { id: 3, product: "Product C", message: "Not as expected, disappointed.", read: false, rating: 2 },
   ]);
 
-  // Toggle visibility for orders and feedbacks
+  // New state for products
+  const [products, setProducts] = useState([]);
+  const [newProduct, setNewProduct] = useState({ name: "", price: "", description: "" });
+
+  // Toggle visibility for orders, feedbacks, and products
   const toggleOrders = () => setShowOrders(!showOrders);
   const toggleFeedbacks = () => setShowFeedbacks(!showFeedbacks);
+  const toggleProducts = () => setShowProducts(!showProducts); // New toggle for products
 
   // Handle accept action for a single order
   const handleAcceptOrder = (orderId) => {
@@ -137,6 +143,14 @@ const SellerDashboard = () => {
       }
     }
     return stars;
+  };
+
+  // Handle adding a new product
+  const handleAddProduct = (e) => {
+    e.preventDefault();
+    if (!newProduct.name || !newProduct.price) return; // Validate input
+    setProducts([...products, { id: products.length + 1, ...newProduct }]);
+    setNewProduct({ name: "", price: "", description: "" }); // Reset form
   };
 
   return (
@@ -297,6 +311,77 @@ const SellerDashboard = () => {
           </table>
         </div>
       )}
+
+      {/* Product Management Section */}
+      <div className="col-span-3 bg-white p-4 rounded-lg shadow-md">
+        <h3 className="text-lg font-semibold mb-4">Manage Products</h3>
+        <button onClick={toggleProducts} className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
+          {showProducts ? "Hide Products" : "Show Products"}
+        </button>
+        {showProducts && (
+          <>
+            <form onSubmit={handleAddProduct} className="mb-4">
+              <input
+                type="text"
+                placeholder="Product Name"
+                value={newProduct.name}
+                onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                className="border p-2 rounded mr-2"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Price"
+                value={newProduct.price}
+                onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                className="border p-2 rounded mr-2"
+                required
+              />
+              <input
+                type="text"
+                placeholder="Description"
+                value={newProduct.description}
+                onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                className="border p-2 rounded mr-2"
+              />
+              <input
+                type="file"
+                placeholder="Description"
+                value={newProduct.image}
+                onChange={(e) => setNewProduct({ ...newProduct, image: e.target.value })}
+                className="border p-2 rounded mr-2"
+              />
+              <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-lg">
+                Add Product
+              </button>
+            </form>
+
+            <h4 className="text-lg font-semibold mb-2">Product List</h4>
+            <table className="min-w-full table-auto text-sm text-gray-600">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-6 py-3 text-left">ID</th>
+                  <th className="px-6 py-3 text-left">Name</th>
+                  <th className="px-6 py-3 text-left">Price</th>
+                  <th className="px-6 py-3 text-left">Description</th>
+                  <th className="px-6 py-3 text-left">Image</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.id} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-4">{product.id}</td>
+                    <td className="px-6 py-4">{product.name}</td>
+                    <td className="px-6 py-4">{product.price}</td>
+                    <td className="px-6 py-4">{product.description}</td>
+                    <td className="px-6 py-4">{product.image}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        )}
+      </div>
     </div>
   );
 };

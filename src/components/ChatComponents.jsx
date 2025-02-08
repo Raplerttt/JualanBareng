@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import { FaPaperclip, FaImage, FaCamera } from 'react-icons/fa'; // Importing camera icon
-import Webcam from 'react-webcam'; // Import Webcam library
+import React, { useState, useEffect, useRef } from 'react'; // Menggunakan useRef
+import { FaPaperclip, FaCamera, FaCheck, FaCheckDouble, FaTimes } from 'react-icons/fa'; // Importing icons
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const ChatComponents = () => {
   const [selectedSeller, setSelectedSeller] = useState(null); // Seller yang dipilih
   const [message, setMessage] = useState(""); // Pesan yang diketik user
   const [messages, setMessages] = useState([]); // Daftar pesan yang ada
   const [file, setFile] = useState(null); // Untuk menyimpan lampiran file
-  const [image, setImage] = useState(null); // Untuk menyimpan gambar
   const [cameraImage, setCameraImage] = useState(null); // Untuk menyimpan gambar dari kamera
+  const navigate = useNavigate(); // Hook untuk navigasi
+  const messageInputRef = useRef(null); // Referensi untuk input pesan
 
   const sellers = [
     { id: 1, name: 'Seller 1', profilePic: 'https://via.placeholder.com/50' },
@@ -24,15 +25,27 @@ const ChatComponents = () => {
 
   // Fungsi untuk mengirim pesan
   const handleSendMessage = () => {
-    if (message.trim() || file || image || cameraImage) {
-      setMessages([
-        ...messages,
-        { sender: 'User', text: message, file, image, cameraImage },
-      ]);
+    if (message.trim() || file || cameraImage) {
+      const newMessage = {
+        sender: 'User',
+        text: message,
+        file,
+        cameraImage,
+        seller: selectedSeller,
+        status: 'sent', // Status awal 'sent'
+      };
+
+      setMessages([...messages, newMessage]);
       setMessage(""); // Reset input pesan
       setFile(null); // Reset lampiran file
-      setImage(null); // Reset gambar
       setCameraImage(null); // Reset foto kamera
+
+      // Simulasi pengubahan status setelah beberapa detik
+      setTimeout(() => {
+        const updatedMessages = [...messages, newMessage];
+        updatedMessages[updatedMessages.length - 1].status = 'read'; // Ubah status menjadi 'dibaca' setelah 3 detik
+        setMessages(updatedMessages);
+      }, 3000); // Status menjadi dibaca setelah 3 detik
     }
   };
 
@@ -41,20 +54,42 @@ const ChatComponents = () => {
     setFile(e.target.files[0]);
   };
 
-  // Fungsi untuk menangani pemilihan gambar
-  const handleImageChange = (e) => {
-    setImage(URL.createObjectURL(e.target.files[0])); // Menampilkan gambar sementara
-  };
-
   // Fungsi untuk menangani foto kamera
   const handleCameraChange = (imageSrc) => {
     setCameraImage(imageSrc); // Menyimpan gambar kamera
   };
 
+  // Fungsi untuk pergi ke detail store
+  const goToDetailStore = (sellerId) => {
+    navigate(`/detail-store/${sellerId}`); // Navigasi ke halaman detail store
+  };
+
+  // Fungsi untuk mengubah status pesan secara otomatis jika gagal
+  const updateMessageStatusToFailed = (index) => {
+    const updatedMessages = [...messages];
+    updatedMessages[index].status = 'failed'; // Set status ke gagal
+    setMessages(updatedMessages);
+  };
+
+  // Fungsi untuk menangani penekanan tombol Enter
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Mencegah form submit jika dalam form
+      handleSendMessage(); // Mengirim pesan
+    }
+  };
+
+  // Fokus otomatis ke input pesan setelah seller dipilih
+  useEffect(() => {
+    if (selectedSeller && messageInputRef.current) {
+      messageInputRef.current.focus(); // Fokus ke input pesan
+    }
+  }, [selectedSeller]); // Fokus ketika seller dipilih
+
   return (
-    <div className=" mx-auto py-8">
+    <div className="mx-auto py-8">
       <div className="flex flex-col md:flex-row bg-gray-100 rounded-lg shadow-md overflow-hidden">
-        {/* Sidebar Kiri */}
+        {/* Sidebar Kiri (Daftar Seller) */}
         <div className="w-full md:w-1/4 bg-white shadow-lg p-4">
           <h2 className="text-lg font-bold mb-4 text-center">CHAT</h2>
           <ul>
@@ -99,17 +134,31 @@ const ChatComponents = () => {
                       key={index}
                       className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}
                     >
+                      {/* Menambahkan status pesan ke kiri */}
+                      <div className="flex items-center mr-3 space-x-2">
+                        {msg.status === 'sent' && <FaCheck className="text-green-500" />}
+                        {msg.status === 'read' && <FaCheckDouble className="text-blue-500" />}
+                        {msg.status === 'failed' && <FaTimes className="text-red-500" />}
+                      </div>
+
                       <div
                         className={`p-2 rounded-lg max-w-xs ${msg.sender === 'User' ? 'bg-green-500 text-white' : 'bg-gray-300 text-gray-700'}`}
                       >
-                        {msg.text}
-                        {msg.image && (
-                          <img
-                            src={msg.image}
-                            alt="Image"
-                            className="mt-2 max-w-xs rounded-md"
-                          />
+                        {/* Gambar Profil Seller di Dalam Pesan */}
+                        {msg.seller && (
+                          <div
+                            className="mt-2 flex items-center cursor-pointer"
+                            onClick={() => goToDetailStore(msg.seller.id)} // Klik untuk menuju ke halaman detail store
+                          >
+                            <img
+                              src={msg.seller.profilePic}
+                              alt={msg.seller.name}
+                              className="w-8 h-8 rounded-full mr-2"
+                            />
+                            <span className="text-sm text-blue-600">{msg.seller.name}</span>
+                          </div>
                         )}
+                        {msg.text}
                         {msg.cameraImage && (
                           <img
                             src={msg.cameraImage}
@@ -135,10 +184,12 @@ const ChatComponents = () => {
               {/* Input Pesan */}
               <div className="flex items-center space-x-4">
                 <input
+                  ref={messageInputRef} // Menambahkan ref pada input pesan
                   type="text"
                   className="flex-1 p-2 border border-gray-300 rounded-lg"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={handleKeyDown} // Menambahkan event handler untuk tombol Enter
                   placeholder="Tulis pesan..."
                 />
                 <div className="flex items-center space-x-2">

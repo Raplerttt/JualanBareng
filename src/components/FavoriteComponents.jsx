@@ -44,7 +44,7 @@ const FavoriteComponents = () => {
 
   return (
     <div className="mx-auto py-12 px-4">
-      <h2 className="text-3xl font-bold text-center mb-8">My Favorite Products</h2>
+      <h2 className="text-3xl font-bold text-center text-[#DBD3D3] mb-8">My Favorite Products</h2>
       <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
         {products.map((product) => {
           const isFavorite = favorites.includes(product.id);

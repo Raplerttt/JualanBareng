@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 const AuthFormSeller = ({
-  formType = "login", // Default formType is "login"
+  formType = "login_seller", // Default formType is "login"
   buttonText = "Login",
   onSubmit,
 }) => {
@@ -11,7 +11,7 @@ const AuthFormSeller = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (formType === "login") {
+    if (formType === "login_seller") {
       // Perform login logic here (like authentication checks)
       console.log("Logging in...");
       
@@ -33,7 +33,7 @@ const AuthFormSeller = ({
 
   return (
     <div className="w-full p-8">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+      <h2 className="text-2xl font-bold text-white mb-6 text-center">
         {formType === "login" ? "Login" : "Register"} as a Seller
       </h2>
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -41,7 +41,7 @@ const AuthFormSeller = ({
           <>
             {/* Registration form fields */}
             <div>
-              <label className="block text-gray-600">Store Name</label>
+              <label className="block text-white">Store Name</label>
               <input
                 type="text"
                 placeholder="Enter your store name"
@@ -49,7 +49,7 @@ const AuthFormSeller = ({
               />
             </div>
             <div>
-              <label className="block text-gray-600">Email</label>
+              <label className="block text-white">Email</label>
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -57,7 +57,7 @@ const AuthFormSeller = ({
               />
             </div>
             <div>
-              <label className="block text-gray-600">Phone Number</label>
+              <label className="block text-white">Phone Number</label>
               <input
                 type="text"
                 placeholder="Enter your phone number"
@@ -65,7 +65,7 @@ const AuthFormSeller = ({
               />
             </div>
             <div>
-              <label className="block text-gray-600">Password</label>
+              <label className="block text-white">Password</label>
               <input
                 type="password"
                 placeholder="Enter your password"
@@ -73,7 +73,7 @@ const AuthFormSeller = ({
               />
             </div>
             <div>
-              <label className="block text-gray-600">Confirm Password</label>
+              <label className="block text-white">Confirm Password</label>
               <input
                 type="password"
                 placeholder="Confirm your password"
@@ -85,7 +85,7 @@ const AuthFormSeller = ({
         {formType === "login" && (
           <>
             <div>
-              <label className="block text-gray-600">Email</label>
+              <label className="block text-white">Email</label>
               <input
                 type="email"
                 placeholder="Enter your email"
@@ -93,7 +93,7 @@ const AuthFormSeller = ({
               />
             </div>
             <div>
-              <label className="block text-gray-600">Password</label>
+              <label className="block text-white">Password</label>
               <input
                 type="password"
                 placeholder="Enter your password"
@@ -104,11 +104,18 @@ const AuthFormSeller = ({
         )}
         <div className="flex items-center justify-between">
           <div className="flex items-center justify-start w-1/2">
-            {formType === "login" && (
+            {formType === "login" ? (
               <div className="mt-4 text-sm">
-                <span className="text-gray-600">Don't have an account? </span>
+                <span className="text-white">Don't have an account? </span>
                 <a href="/seller/register" className="text-blue-500 hover:underline">
                   Register as Seller
+                </a>
+              </div>
+            ) : (
+              <div className="mt-4 text-sm">
+                <span className="text-gray-600">Already have an account? </span>
+                <a href="/seller/login" className="text-blue-500 hover:underline">
+                  Login
                 </a>
               </div>
             )}
@@ -118,22 +125,26 @@ const AuthFormSeller = ({
               type="submit"
               className="px-6 py-2 rounded-lg text-white font-medium"
               style={{
-                background: "linear-gradient(90deg, #47EE54, #54A05A)",
+                background: "linear-gradient(90deg, #091057, #024CAA)",
               }}
             >
               {buttonText}
             </button>
           </div>
         </div>
+        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
+            <button
+              className="flex-1 px-4 py-2 rounded-lg shadow"
+              style={{
+                background: 'linear-gradient(90deg, #091057, #024CAA)',
+                color: 'white',
+              }}
+              onClick={() => navigate('/user/login')} // Navigate to seller register
+            >
+              Login as User
+            </button>
+          </div>
       </form>
-      {formType === "register" && (
-        <div className="mt-4 text-sm">
-          <span className="text-gray-600">Already have an account? </span>
-          <a href="/seller/login" className="text-blue-500 hover:underline">
-            Login
-          </a>
-        </div>
-      )}
     </div>
   );
 };

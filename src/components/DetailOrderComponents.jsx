@@ -1,9 +1,17 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const DetailOrderComponents = () => {
   const [quantity, setQuantity] = useState(1);
   const pricePerItem = 50000; // Ganti dengan harga makanan satuan
   const totalPrice = pricePerItem * quantity;
+
+  const navigate = useNavigate(); // Initialize useNavigate
+
+  const handleFinishOrder = () => {
+    // Navigasi kembali ke halaman Cart setelah selesai
+    navigate('/cart'); // Ganti dengan path yang sesuai untuk Cart
+  };
 
   return (
     <div className="mx-auto py-8 px-4">
@@ -68,9 +76,10 @@ const DetailOrderComponents = () => {
           {/* Long Button */}
           <div className="mt-6">
             <button
+              onClick={handleFinishOrder} // Navigasi ke Cart saat selesai
               className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300"
             >
-              Place Order
+              Selesai
             </button>
           </div>
         </div>

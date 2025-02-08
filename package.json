@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "@mui/material": "^6.4.1",
+    "aos": "^2.3.4",
     "axios": "^1.7.9",
     "chart.js": "^4.4.7",
     "classnames": "^2.5.1",

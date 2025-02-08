@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import AuthForm from '../components/AuthFormSeller'; // Ensure AuthForm is properly imported
+import AuthForm from '../components/AuthFormUser'; // Ensure AuthForm is properly imported
 
 const RegisterFormUser  = () => {
   const navigate = useNavigate(); // Initialize the navigate hook

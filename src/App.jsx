@@ -9,12 +9,13 @@ import DetailStorePages from "./pages/DetailStorePages";
 import FavoritePages from "./pages/FavoritePages";
 import CartPages from "./pages/CartPages";
 import NotFound from "./pages/NotFoundPages";
-import UseLoading from "./hooks/UseLoading"
+import UseLoading from "./hooks/UseLoading";
 import Loading from "./components/Loading"; // Import komponen loading
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
   const location = useLocation(); // Untuk mendeteksi perubahan halaman
+
   useEffect(() => {
     startLoading(); // Tampilkan loading saat halaman berubah
     setTimeout(() => stopLoading(), 1000); // Simulasikan loading selama 1 detik
@@ -27,8 +28,8 @@ function AppContent() {
         {/* Main Pages */}
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPages />} />
-        <Route path="/detail-order" element={<DetailOrderPages />} />
-        <Route path="/detail-store" element={<DetailStorePages />} />
+        <Route path="/detail-order/:id" element={<DetailOrderPages />} />
+        <Route path="/detail-store/:id" element={<DetailStorePages />} />
         <Route path="/favorite" element={<FavoritePages />} />
         <Route path="/cart" element={<CartPages />} />
 

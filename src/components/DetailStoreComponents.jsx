@@ -23,15 +23,15 @@ const DetailStoreComponents = () => {
         {/* Right Side: Store Name and Details */}
         <div className="w-1/3 space-y-4">
           {/* Store Name at Top Right of Image */}
-          <h2 className="text-3xl font-semibold text-gray-800">{store.name}</h2>
+          <h2 className="text-3xl font-semibold text-[#DBD3D3]">{store.name}</h2>
           
           {/* Store Address */}
-          <p className="text-gray-600 text-lg">{store.address}</p>
+          <p className="text-[#DBD3D3] text-lg">{store.address}</p>
           
           {/* Store Rating */}
           <div className="flex space-x-2">
             <span className="text-yellow-500">⭐⭐⭐⭐</span> {/* Static stars for rating */}
-            <span className="text-gray-600">{store.rating}/5</span>
+            <span className="text-[#DBD3D3]">{store.rating}/5</span>
           </div>
         </div>
       </div>

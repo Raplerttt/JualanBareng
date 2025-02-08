@@ -16,6 +16,7 @@ const SellerRegistForm = () => {
           Be a Good Seller
           </h2>
         </div>
+        
 
         {/* Right Side (Auth Form) */}
         <div className="w-full md:w-1/2 p-8">
