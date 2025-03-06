@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { FaHeart, FaCommentDots, FaShoppingCart, FaSearch } from 'react-icons/fa';
 import { HiOutlineMenu } from 'react-icons/hi';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../auth/authContext'; // Import AuthContext
 
 const Navbar = () => {
+  const { user, logout } = useContext(AuthContext); // Ambil user dan logout dari context
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const navigate = useNavigate();
 
   const handleMouseEnter = () => setIsDropdownOpen(true);
   const handleMouseLeave = () => setIsDropdownOpen(false);
@@ -15,6 +17,15 @@ const Navbar = () => {
     setIsDropdownOpen(false);
   };
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen);
+
+  const handleLogout = async () => {
+    try {
+      await logout(); // Call the logout function from AuthContext
+      navigate('/user/login'); // Redirect to login page after logout
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   return (
     <header className="bg-gray-200 rounded-full shadow-md">
@@ -55,8 +66,18 @@ const Navbar = () => {
           <FaHeart className="text-gray-600 cursor-pointer hover:text-gray-800 transition duration-200 ease-in-out" onClick={() => navigate('/favorite')} />
           <FaCommentDots className="text-gray-600 cursor-pointer hover:text-gray-800 transition duration-200 ease-in-out" onClick={() => navigate('/chat')} />
           <FaShoppingCart className="text-gray-600 cursor-pointer hover:text-gray-800 transition duration-200 ease-in-out" onClick={() => navigate('/cart')} />
-          <button onClick={() => navigate('/user/login')} className="text-[#024CAA] font-medium hover:underline">Login</button>
-          <button onClick={() => navigate('/user/register')} className="px-4 py-2 rounded-lg text-[#DBD3D3] bg-gradient-to-r from-[#091057] to-[#024CAA] font-medium">Register</button>
+
+          {user ? (
+            <div className="flex items-center space-x-2">
+              <img src={user?.profilePicture || '/default-avatar.png'} alt="Profile" className="w-8 h-8 rounded-full cursor-pointer" onClick={() => navigate('/profile')} />
+              <button onClick={handleLogout} className="text-red-600 hover:underline">Logout</button>
+            </div>
+          ) : (
+            <>
+              <button onClick={() => navigate('/user/login')} className="text-[#024CAA] font-medium hover:underline">Login</button>
+              <button onClick={() => navigate('/user/register')} className="px-4 py-2 rounded-lg text-[#DBD3D3] bg-gradient-to-r from-[#091057] to-[#024CAA] font-medium">Register</button>
+            </>
+          )}
         </div>
       </div>
     </header>

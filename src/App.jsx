@@ -11,19 +11,23 @@ import CartPages from "./pages/CartPages";
 import NotFound from "./pages/NotFoundPages";
 import UseLoading from "./hooks/UseLoading";
 import Loading from "./components/Loading"; // Import komponen loading
+import { AuthProvider } from "./auth/authContext";
+import Navbar from "./components/layout/NavbarComponents"; // Tambahkan Navbar agar selalu terlihat
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
-  const location = useLocation(); // Untuk mendeteksi perubahan halaman
+  const location = useLocation();
 
   useEffect(() => {
-    startLoading(); // Tampilkan loading saat halaman berubah
-    setTimeout(() => stopLoading(), 1000); // Simulasikan loading selama 1 detik
+    startLoading();
+    const timer = setTimeout(() => stopLoading(), 1000);
+    
+    return () => clearTimeout(timer); // Cleanup effect untuk menghindari memory leak
   }, [location.pathname]);
 
   return (
     <div>
-      {isLoading && <Loading />} {/* Tampilkan loading jika isLoading true */}
+      {isLoading && <Loading />} {/* Loading ditampilkan jika isLoading true */}
       <Routes>
         {/* Main Pages */}
         <Route path="/" element={<HomePage />} />
@@ -33,13 +37,13 @@ function AppContent() {
         <Route path="/favorite" element={<FavoritePages />} />
         <Route path="/cart" element={<CartPages />} />
 
-        {/* User-related Pages */}
+        {/* User Routes */}
         <Route path="user/*" element={<UserRoutes />} />
         
-        {/* Seller-related Pages */}
+        {/* Seller Routes */}
         <Route path="seller/*" element={<SellerRoutes />} />
 
-        {/* 404 Notfound */}
+        {/* 404 Not Found */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
@@ -48,9 +52,11 @@ function AppContent() {
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <AuthProvider> {/* AuthProvider harus membungkus seluruh aplikasi */}
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

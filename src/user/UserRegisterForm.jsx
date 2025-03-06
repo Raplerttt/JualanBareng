@@ -1,22 +1,22 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import AuthForm from '../components/AuthFormUser'; // Ensure AuthForm is properly imported
+import AuthForm from './authFormRegistrasi'; // Ensure AuthForm is properly imported
+import logo from '../assets/logo.png'; // Correct path to the logo
 
 const RegisterFormUser  = () => {
   const navigate = useNavigate(); // Initialize the navigate hook
 
-
   return (
-    <div className="items-center justify-center">
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="container mx-auto flex flex-col md:flex-row rounded-lg shadow-lg overflow-hidden">
         {/* Left Side (Mobile Version) */}
-        <div className="w-full md:w-1/2 bg-green-50 p-8 flex flex-col items-center justify-center space-y-4">
+        <div className="w-full md:w-1/2 flex flex-col items-center justify-center p-8 bg-green-50">
           <img
-            src="/logo.png" // Replace with your logo path
+            src={logo} // Correct way to reference the imported logo
             alt="Logo"
-            className="w-20 h-20"
+            className="w-43 h-43 mb-4" // Adjusted size for better visibility
           />
-          <h2 className="text-2xl font-semibold text-green-600 text-center md:text-left">
+          <h2 className="text-2xl font-semibold text-green-600 text-center md:text-left mb-4">
             Want to become a seller?
           </h2>
 
@@ -42,7 +42,7 @@ const RegisterFormUser  = () => {
         </div>
 
         {/* Right Side (Auth Form) */}
-        <div className="w-full md:w-1/2 p-8">
+        <div className="w-full md:w-1/2 p-8 bg-blue-200">
           {/* Using AuthForm for registration form */}
           <AuthForm
             formType="register" // Indicating this is the registration form
@@ -59,4 +59,4 @@ const RegisterFormUser  = () => {
   );
 };
 
-export default RegisterFormUser;
+export default RegisterFormUser ;
