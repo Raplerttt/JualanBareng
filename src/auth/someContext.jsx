@@ -19,3 +19,5 @@ const SomeComponent = () => {
     </div>
   );
 };
+
+export default SomeComponent

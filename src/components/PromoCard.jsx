@@ -1,35 +1,63 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 const PromoCard = () => {
+  const [isCopied, setIsCopied] = useState(false);
+  const couponCode = "STEALDEAL20";
+  const validUntil = "December 20, 2021";
+
   const handleCopyCode = () => {
-    const couponCode = "STEALDEAL20";
     navigator.clipboard.writeText(couponCode);
-    alert(`Coupon code ${couponCode} copied to clipboard!`);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
   };
 
   return (
-    <div className="flex justify-center items-center py-10">
-      <div className="bg-white border border-[#DBD3D3] rounded-xl shadow-lg overflow-hidden max-w-lg w-full text-center">
-        <div className="bg-gradient-to-r from-[#091057] to-[#024CAA] py-6 px-8 text-white">
-          <h3 className="text-2xl font-bold">Exclusive Ride Discount!</h3>
-          <p className="text-sm mt-2">20% off on all city rides using HDFC Credit Card</p>
+    <div className="flex justify-center items-center min-h-[50vh] px-4">
+      <div className="bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden w-full max-w-md transition-all hover:shadow-xl">
+        {/* Header with gradient */}
+        <div className="bg-gradient-to-r from-teal-400 to-teal-200 py-6 px-6 text-center">
+          <h3 className="text-2xl font-bold text-gray-800">Exclusive Ride Discount</h3>
+          <p className="text-sm mt-2 text-gray-700">
+            20% off on all city rides using HDFC Credit Card
+          </p>
         </div>
+        
+        {/* Content */}
         <div className="p-6 flex flex-col items-center">
           <img
             src="https://i.postimg.cc/KvTqpZq9/uber.png"
-            className="w-40 mb-4 rounded-lg"
-            alt="Promo Logo"
+            className="w-32 mb-6"
+            alt="Uber logo"
+            loading="lazy"
           />
-          <div className="flex items-center justify-center bg-[#DBD3D3] border border-gray-300 rounded-lg px-4 py-2 text-lg font-semibold">
-            <span className="mr-2 text-[#091057]">STEALDEAL20</span>
+          
+          {/* Coupon code box */}
+          <div className="w-full max-w-xs bg-gray-100 border border-gray-200 rounded-lg p-3 flex items-center justify-between mb-4">
+            <span className="font-mono text-lg text-indigo-800 font-medium">
+              {couponCode}
+            </span>
             <button
               onClick={handleCopyCode}
-              className="bg-[#EC8305] text-white px-3 py-1 rounded-md hover:bg-[#DBD3D3] transition-all"
+              className={`px-4 py-2 rounded-md font-medium transition-colors ${
+                isCopied 
+                  ? 'bg-green-500 text-white' 
+                  : 'bg-amber-500 hover:bg-amber-600 text-white'
+              }`}
+              aria-label="Copy coupon code"
             >
-              Copy
+              {isCopied ? 'Copied!' : 'Copy'}
             </button>
           </div>
-          <p className="text-xs text-[#024CAA] mt-3">Valid Till: 20 Dec, 2021</p>
+          
+          <p className="text-sm text-blue-600 mt-2">
+            Valid until: <time dateTime="2021-12-20">{validUntil}</time>
+          </p>
+          
+          <div className="mt-6 w-full border-t border-gray-100 pt-4">
+            <p className="text-xs text-gray-500">
+              * Terms and conditions apply. Valid only on rides within city limits.
+            </p>
+          </div>
         </div>
       </div>
     </div>

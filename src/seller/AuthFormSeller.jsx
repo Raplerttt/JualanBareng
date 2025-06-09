@@ -16,34 +16,35 @@ const AuthFormSellerLogin = ({ buttonText = "Login" }) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Handle form submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setLoading(true);
+// Handle form submit
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setError(null);
+  setLoading(true);
 
-    try {
-      const response = await axios.post(
-        "/seller/login", // Pastikan URL ini sesuai dengan endpoint backend Anda
-        formData, // Kirim formData langsung
-        { headers: { "Content-Type": "application/json" } }
-      );
+  try {
+    const response = await axios.post(
+      "/seller/login", // Ensure this URL matches your backend endpoint
+      formData, // Send formData directly
+      { headers: { "Content-Type": "application/json" } }
+    );
 
-      const data = response.data;
-      console.log("✅ Login berhasil:", data);
-      // Simpan token di localStorage atau state management jika diperlukan
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("refreshToken", data.refreshToken);
+    const data = response.data;
+    console.log("✅ Login berhasil:", data);
+    
+    // Store tokens in localStorage
+    localStorage.setItem("Sellertoken", data.token); // General token
+    localStorage.setItem("refreshToken", data.refreshToken); // Refresh token
 
-      // Redirect ke halaman dashboard atau yang sesuai
-      navigate("/seller/dashboard"); // Ganti dengan rute yang sesuai
-    } catch (err) {
-      console.error("❌ Error response:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Redirect to the dashboard or appropriate page
+    navigate("/seller/dashboard"); // Change to the appropriate route
+  } catch (err) {
+    console.error("❌ Error response:", err.response?.data || err.message);
+    setError(err.response?.data?.message || "Something went wrong");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="w-full p-8">

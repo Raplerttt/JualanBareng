@@ -22,18 +22,18 @@ const HomePages = () => {
       offset: 100, // Optional: add an offset for animations to start a bit earlier
     });
 
-    // Cek apakah user sudah login
-    const storedUser = JSON.parse(localStorage.getItem("user"));
-    if (storedUser) {
-      setUser(storedUser);
+    // Check if user is logged in
+    const storedUser  = JSON.parse(localStorage.getItem("user"));
+    if (storedUser ) {
+      setUser (storedUser );
     }
   }, []);
 
   return (
     <>
       <Main>
+      <Navbar user={user} />
         {/* Kirim user ke Navbar agar bisa menyesuaikan tampilan */}
-        <Navbar user={user} />
         <div data-aos="fade-up">
           <ProductHits />
         </div>
@@ -49,8 +49,8 @@ const HomePages = () => {
         <div data-aos="fade-up" data-aos-delay="800">
           <PromoList />
         </div>
-      </Main>
       <Footer />
+      </Main>
     </>
   );
 };

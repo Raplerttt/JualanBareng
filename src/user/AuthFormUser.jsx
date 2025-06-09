@@ -61,20 +61,19 @@ const AuthFormUser  = ({ buttonText = "Login" }) => {
         userData,
         { headers: { "Content-Type": "application/json" } }
       );
-
+    
       console.log("✅ Login berhasil:", response.data);
-
+    
       // Check if the response contains the expected properties
-      if (response.data && response.data.token && response.data.refreshToken) {
+      if (response.data && response.data.success) {
+        const { token, refreshToken, user } = response.data; // Destructure the response
+    
         // Store tokens in local storage
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("refreshToken", response.data.refreshToken);
-        
+        localStorage.setItem("token", token);
+        localStorage.setItem("refreshToken", refreshToken);
+        localStorage.setItem("user", JSON.stringify(user)); // Store user data
+    
         // Call login function from AuthContext with user data
-        const user = {
-          email: response.data.email, // Assuming the email is part of the response
-          // Add other user properties if needed
-        };
         login(user); // Call login function from AuthContext
         navigate("/"); // Ganti dengan rute yang sesuai setelah login
       } else {
@@ -98,7 +97,6 @@ const AuthFormUser  = ({ buttonText = "Login" }) => {
     try {
       const res = await axios.post('/auth/google-login', { idToken: tokenId }); // Kirim tokenId ke backend
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
       login(res.data.user); // Call login function from AuthContext
       navigate("/"); // Redirect setelah login
     } catch (error) {
@@ -117,7 +115,6 @@ const AuthFormUser  = ({ buttonText = "Login" }) => {
     try {
       const res = await axios.post('/auth/facebook-login', { accessToken }); // Kirim accessToken ke backend
       localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
       login(res.data.user); // Call login function from AuthContext
       navigate("/"); // Redirect setelah login
     } catch (error) {

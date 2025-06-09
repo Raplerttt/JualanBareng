@@ -1,16 +1,17 @@
 import React from 'react';
 import { FaInstagram } from 'react-icons/fa';
+import logo from '../../assets/logo.png';
 
 const Footer = () => {
   return (
-    <footer className="bg-white">
-      <div className="container mx-auto py-8 px-6 flex justify-between items-center">
+    <footer className="bg-[#80CBC4] shadow-md mt-10">
+      <div className="container mx-auto py-8 px-6 flex flex-col md:flex-row justify-between items-center">
         {/* Left Section */}
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-center md:items-start text-center md:text-left">
           <img
-            src="/logo.png" // Ganti dengan path logo Anda
+            src={logo} // Ganti dengan path logo Anda
             alt="Logo"
-            className="w-16 h-16"
+            className="w-14 h-auto"
           />
           <p className="mt-2 text-gray-600 text-sm font-medium">
             Belanja kecil, dampak besar
@@ -18,7 +19,7 @@ const Footer = () => {
         </div>
 
         {/* Right Section */}
-        <div className="text-right">
+        <div className="mt-4 md:mt-0 text-center md:text-right">
           <h4 className="text-gray-800 font-semibold">Follow Me</h4>
           <a
             href="https://instagram.com"

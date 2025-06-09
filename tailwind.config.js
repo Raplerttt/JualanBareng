@@ -8,6 +8,9 @@ export default {
     extend: {
       colors: {
         'custom-green': '#C2FFC7',
+        'navbar' : '#80CBC4',
+        'hero' : '#B4EBE6',
+        'button' : '#FFB433'
       },
     },
   },

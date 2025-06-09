@@ -1,52 +1,100 @@
-import React, { useState } from 'react';
-import { FaStar, FaHeart } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { FaStar, FaHeart, FaSpinner } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
 import classNames from 'classnames';
+import axios from '../../utils/axios';
 
 const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
+  const [imageError, setImageError] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 50 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.9, ease: 'easeOut' }}
-      className="group relative flex flex-col overflow-hidden rounded-lg border bg-white shadow-md hover:shadow-xl transition-shadow duration-300"
+      whileHover={{ scale: 1.02 }}
+      transition={{ duration: 0.3, ease: 'easeOut' }}
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg hover:shadow-2xl transition-all duration-300"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <a href="#" className="relative w-full h-48 overflow-hidden rounded-xl">
-        <img
-          className="absolute top-0 right-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          src={product.image}
-          alt={product.name}
-          loading="lazy"
-          onError={(e) => (e.target.src = 'https://via.placeholder.com/200')}
-        />
+      <div className="relative w-full h-56 overflow-hidden rounded-t-xl bg-gradient-to-br from-gray-50 to-gray-100">
+        {imageError ? (
+          <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
+            <span>Image not available</span>
+          </div>
+        ) : (
+          <img
+            className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+            src={`http://localhost:3000/${product.image}`}
+            alt={product.name}
+            onError={handleImageError}
+            loading="lazy"
+          />
+        )}
+        
         <motion.div
-          whileTap={{ scale: 0.8 }}
-          onClick={() => onFavoriteToggle(product.id)}
-          className="absolute top-2 right-2 cursor-pointer group-hover:text-red-500 transition-all duration-300"
+          whileTap={{ scale: 0.9 }}
+          onClick={(e) => {
+            e.preventDefault();
+            onFavoriteToggle(product.id);
+          }}
+          className="absolute top-3 right-3 cursor-pointer"
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           role="button"
         >
-          <FaHeart size={24} className={classNames({ 'text-red-500': isFavorite, 'text-gray-400': !isFavorite })} />
+          <FaHeart 
+            size={24} 
+            className={classNames(
+              'transition-all duration-300 transform',
+              {
+                'text-red-500 scale-110': isFavorite,
+                'text-white drop-shadow-md': !isFavorite && !isHovered,
+                'text-red-300 scale-110': !isFavorite && isHovered,
+              }
+            )} 
+          />
         </motion.div>
-      </a>
-      <div className="mt-4 px-4 pb-4">
-        <a href="#">
-          <h5 className="text-xl font-semibold text-[#091057] truncate">{product.name}</h5>
-        </a>
-        <div className="mt-2 text-sm text-gray-600">
-          <p>Category: <span className="text-[#024CAA]">{product.category}</span></p>
-          <p>Address: {product.address}</p>
+      </div>
+      
+      <div className="flex-1 p-5 flex flex-col">
+        <h5 className="text-lg font-semibold text-gray-900 truncate mb-1">{product.productName}</h5>
+        <div className="text-sm text-gray-600 space-y-1 mb-3">
+          <p className="flex items-center">
+            <span className="text-gray-500 mr-1">Category:</span>
+            <span className="text-blue-600 font-medium">{product.categoryName}</span>
+          </p>
+          <p className="flex items-start">
+            <span className="text-gray-500 mr-1">Location:</span>
+            <span className="text-gray-700">{product.seller?.location}</span>
+          </p>
         </div>
-        <div className="flex mt-2" title={`Rating: ${product.rating}`}>
-          {Array.from({ length: 5 }, (_, index) => (
-            <FaStar
-              key={index}
-              className={classNames('text-lg', {
-                'text-[#EC8305]': index < Math.floor(product.rating),
-                'text-gray-400': index >= Math.floor(product.rating),
-              })}
-            />
-          ))}
+        
+        <div className="mt-auto flex justify-between items-center">
+          <div className="flex items-center" title={`Rating: ${product.averageRating}`}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <FaStar
+                key={index}
+                className={classNames('text-sm', {
+                  'text-yellow-500': index < Math.floor(product.rating),
+                  'text-gray-300': index >= Math.floor(product.rating),
+                })}
+              />
+            ))}
+            <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+          </div>
+          
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium rounded-full shadow-md"
+          >
+            View Details
+          </motion.button>
         </div>
       </div>
     </motion.div>
@@ -55,63 +103,94 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
 
 const ProductRecommendation = () => {
   const [favorites, setFavorites] = useState({});
-  const products = [
-    {
-      id: 1,
-      name: 'Nike Air MX Super 2500 - Red',
-      category: 'Sneakers',
-      address: 'New York, USA',
-      image: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ5mVr92lbt5kgy6B8rBaBTFN9FaqCtdQtirg&s',
-      rating: 4.5,
-    },
-    {
-      id: 2,
-      name: 'Adidas Ultra Boost 2022',
-      category: 'Running Shoes',
-      address: 'Los Angeles, USA',
-      image: 'https://down-id.img.susercontent.com/file/6312c7533186471bb5ae6c68b1fbd1ef',
-      rating: 4.0,
-    },
-    {
-      id: 3,
-      name: 'Puma Running Shoes',
-      category: 'Sportswear',
-      address: 'Miami, USA',
-      image: 'https://images.puma.com/image/upload/f_auto,q_auto,b_rgb:fafafa,w_500,h_500/global/310199/01/sv01/fnd/IDN/fmt/png/FAST-R-NITRO%E2%84%A2-Elite-2-Running-Shoes-Men',
-      rating: 4.2,
-    },
-    {
-      id: 4,
-      name: 'Asics Gel Nimbus 23',
-      category: 'Running Shoes',
-      address: 'San Francisco, USA',
-      image: 'https://images.tokopedia.net/img/cache/700/VqbcmM/2022/8/12/1d2d074d-e5ed-48a2-9b88-59b91a7f94df.jpg',
-      rating: 4.8,
-    },
-  ];
-  const handleFavoriteToggle = (id) => {
-    setFavorites((prevFavorites) => ({
-      ...prevFavorites,
-      [id]: !prevFavorites[id],
-    }));
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const handleFavoriteToggle = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please login to save favorites');
+        return;
+      }
+  
+      await axios.post(
+        '/product/favorites',
+        { productId: id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+  
+      setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
+    } catch (error) {
+      console.error('Favorite update failed:', error);
+    }
   };
 
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('/product');
+        console.log('Fetched:', response.data);
+        setProducts(response.data);
+      } catch (err) {
+        setError(err.response?.data?.message || 'Failed to fetch products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
   return (
-    <div className="mx-auto py-12">
-      <h2 className="text-3xl font-bold text-[#DBD3D3] text-center mb-8">Recommended Products</h2>
-      {products.length === 0 ? (
-        <p className="text-center text-gray-500">No products to display.</p>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6">
-          {products.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              isFavorite={favorites[product.id]}
-              onFavoriteToggle={handleFavoriteToggle}
-            />
-          ))}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <h2 className="text-4xl font-bold text-gray-900 mb-2">Discover Our Selection</h2>
+        <p className="text-lg text-gray-600">Curated products just for you</p>
+      </motion.div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          >
+            <FaSpinner className="text-blue-500 text-4xl" />
+          </motion.div>
         </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <div className="inline-block p-4 bg-red-50 rounded-lg">
+            <p className="text-red-600">{error}</p>
+          </div>
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="inline-block p-6 bg-gray-50 rounded-xl">
+            <p className="text-gray-500">No products available at the moment</p>
+          </div>
+        </div>
+      ) : (
+        <motion.div 
+          layout
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8"
+        >
+          <AnimatePresence>
+            {products.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                isFavorite={favorites[product.id]}
+                onFavoriteToggle={handleFavoriteToggle}
+              />
+            ))}
+          </AnimatePresence>
+        </motion.div>
       )}
     </div>
   );

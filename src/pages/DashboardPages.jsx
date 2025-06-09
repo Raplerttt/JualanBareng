@@ -8,10 +8,8 @@ const DashboardPages = () => {
   return (
     <>
     <Main>
-      <Navbar />
       <SellerDashboard />
     </Main>
-      <Footer />
     </>
   )
 }

@@ -1,35 +1,54 @@
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import UserRoutes from "./user/RouteUser";
-import SellerRoutes from "./seller/RouteSeller";
-import HomePage from "./pages/HomePage"; 
-import ChatPages from "./pages/ChatPages"; 
+
+import HomePage from "./pages/HomePage";
+import ChatPages from "./pages/ChatPages";
 import DetailOrderPages from "./pages/DetailOrderPages";
 import DetailStorePages from "./pages/DetailStorePages";
 import FavoritePages from "./pages/FavoritePages";
 import CartPages from "./pages/CartPages";
 import NotFound from "./pages/NotFoundPages";
+
+import UserRoutes from "./user/RouteUser";
+import SellerRoutes from "./seller/RouteSeller";
+
 import UseLoading from "./hooks/UseLoading";
-import Loading from "./components/Loading"; // Import komponen loading
+import Loading from "./components/Loading";
 import { AuthProvider } from "./auth/authContext";
-import Navbar from "./components/layout/NavbarComponents"; // Tambahkan Navbar agar selalu terlihat
+import AdminLayout from "./admin/layout/AdminLayout";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
   const location = useLocation();
 
+  // Untuk efek loading saat pindah halaman
   useEffect(() => {
     startLoading();
     const timer = setTimeout(() => stopLoading(), 1000);
-    
-    return () => clearTimeout(timer); // Cleanup effect untuk menghindari memory leak
+    return () => clearTimeout(timer);
   }, [location.pathname]);
+
+  // Untuk menyisipkan Midtrans Snap Script
+  useEffect(() => {
+    const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
+    const clientKey = "SB-Mid-client-S9-oAr-u4CcQxARM"; // Disarankan pakai process.env.REACT_APP_MIDTRANS_KEY
+
+    const script = document.createElement("script");
+    script.src = snapScript;
+    script.setAttribute("data-client-key", clientKey);
+    script.async = true;
+
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   return (
     <div>
-      {isLoading && <Loading />} {/* Loading ditampilkan jika isLoading true */}
+      {isLoading && <Loading />}
       <Routes>
-        {/* Main Pages */}
         <Route path="/" element={<HomePage />} />
         <Route path="/chat" element={<ChatPages />} />
         <Route path="/detail-order/:id" element={<DetailOrderPages />} />
@@ -37,13 +56,10 @@ function AppContent() {
         <Route path="/favorite" element={<FavoritePages />} />
         <Route path="/cart" element={<CartPages />} />
 
-        {/* User Routes */}
-        <Route path="user/*" element={<UserRoutes />} />
-        
-        {/* Seller Routes */}
-        <Route path="seller/*" element={<SellerRoutes />} />
-
-        {/* 404 Not Found */}
+        {/* Nested Routes */}
+        <Route path="/user/*" element={<UserRoutes />} />
+        <Route path="/seller/*" element={<SellerRoutes />} />
+        <Route path="/admin/*" element={<AdminLayout />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </div>
@@ -52,7 +68,7 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider> {/* AuthProvider harus membungkus seluruh aplikasi */}
+    <AuthProvider>
       <Router>
         <AppContent />
       </Router>

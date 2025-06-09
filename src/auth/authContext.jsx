@@ -1,60 +1,35 @@
-import React, { createContext, useState, useEffect } from "react";
-import axios from "../../utils/axios"; // Import your configured axios instance
+import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser ] = useState(null);
+  const [user, setUser] = useState(null);
+  const isAuthenticated = !!user; // true jika user ada, false jika null
 
   useEffect(() => {
-    const storedUser  = JSON.parse(localStorage.getItem("user"));
-    setUser (storedUser );
+    // Cek user dari localStorage saat aplikasi mulai dijalankan
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
-  const login = (responseData) => {
-    // Assuming responseData contains the user object and tokens
-    const { token, refreshToken, ...userData } = responseData; // Destructure to get user data
-
-    localStorage.setItem("user", JSON.stringify(userData)); // Store user data
-    setUser (userData); // Set user state
+  const login = (userData) => {
+    // Simpan data user di localStorage dan update state
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
   };
 
-  const logout = async () => {
-    try {
-      await axios.post('/auth/logout', {}, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Include access token if needed
-        }
-      });
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      setUser (null);
-    }
-  };
-
-  const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem("refreshToken");
-    if (!refreshToken) {
-      throw new Error("No refresh token available");
-    }
-
-    try {
-      const response = await axios.post('/auth/refresh-token', { token: refreshToken });
-      const newAccessToken = response.data.accessToken;
-      localStorage.setItem("accessToken", newAccessToken); // Update access token
-      return newAccessToken;
-    } catch (error) {
-      console.error("Failed to refresh access token:", error);
-      logout(); // Logout if refresh fails
-      throw error;
-    }
+  const logout = () => {
+    // Hapus data user di localStorage dan reset state
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, refreshAccessToken }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

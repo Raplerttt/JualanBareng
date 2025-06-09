@@ -1,5 +1,6 @@
 import React from 'react';
 import { useInView } from 'react-intersection-observer';
+import { motion } from 'framer-motion';
 
 const stores = [
   {
@@ -24,42 +25,55 @@ const stores = [
   },
 ];
 
-const StoreCard = ({ store }) => {
-  const { ref, inView } = useInView({ threshold: 0.2, triggerOnce: true });
+const StoreCard = ({ store, index }) => {
+  const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
 
   return (
-    <div
+    <motion.div
       ref={ref}
-      className="flex flex-col items-center group p-4 rounded-xl shadow-lg hover:shadow-2xl transition-shadow duration-300"
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      className="flex flex-col items-center p-6 rounded-2xl bg-gradient-to-b from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 transition-all duration-500 group cursor-pointer"
     >
-      <a href="/detail-store">
-        <div className="w-40 h-40 bg-[#024CAA] flex justify-center items-center rounded-full overflow-hidden shadow-md group-hover:shadow-lg transition-shadow duration-300">
+      <a href="/detail-store" className="w-full flex flex-col items-center">
+        <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-700 flex justify-center items-center rounded-full overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-500 group-hover:scale-105">
           <img
             src={store.image}
             alt={store.name}
-            className="w-full h-full object-contain rounded-full p-4"
+            className="w-3/4 h-3/4 object-contain rounded-full transition-all duration-500 group-hover:scale-110"
           />
         </div>
+        <h3 className="mt-6 text-xl font-medium text-gray-200 group-hover:text-orange-400 transition-colors duration-300">
+          {store.name}
+        </h3>
       </a>
-      <h3 className="mt-4 text-lg font-semibold text-[#DBD3D3] group-hover:text-[#EC8305] transition-colors duration-300">
-        {store.name}
-      </h3>
-    </div>
+    </motion.div>
   );
 };
 
 const RecommendedStore = () => {
   return (
-    <div className="mx-auto py-12 px-4">
-      <h2 className="text-3xl font-bold text-center mb-10 text-[#DBD3D3]">
-        Recommended Stores
-      </h2>
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-8">
-        {stores.map((store) => (
-          <StoreCard key={store.id} store={store} />
+    <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 0.8 }}
+        viewport={{ once: true }}
+        className="text-center mb-16"
+      >
+        <h2 className="text-4xl font-bold text-gray-100 mb-4">
+          Recommended Stores
+        </h2>
+        <div className="w-24 h-1 bg-orange-500 mx-auto"></div>
+      </motion.div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        {stores.map((store, index) => (
+          <StoreCard key={store.id} store={store} index={index} />
         ))}
       </div>
-    </div>
+    </section>
   );
 };
 

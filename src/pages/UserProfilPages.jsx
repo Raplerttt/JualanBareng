@@ -11,8 +11,8 @@ const UserProfilPages = () => {
     <Main>
       <Navbar />
       <ChangeProfilUser />
-    </Main>
       <Footer />
+    </Main>
     </>
   );
 };
