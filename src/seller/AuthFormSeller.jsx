@@ -1,115 +1,223 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import axios from "../../utils/axios"; // Import instance axios yang sudah dikonfigurasi
+import React, { useState, useCallback, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import axios from "../../utils/axios";
+import { AuthContext } from "../auth/authContext";
 
 const AuthFormSellerLogin = ({ buttonText = "Login" }) => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
-  const [error, setError] = useState(null);
+  const { login } = useContext(AuthContext);
+
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [error, setError] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Handle input change
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+    setError((prev) => ({ ...prev, [e.target.name]: "" }));
   };
 
-// Handle form submit
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setLoading(true);
+  const validate = () => {
+    const newErrors = {};
+    const { email, password } = formData;
 
-  try {
-    const response = await axios.post(
-      "/seller/login", // Ensure this URL matches your backend endpoint
-      formData, // Send formData directly
-      { headers: { "Content-Type": "application/json" } }
-    );
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Format email tidak valid";
+    }
+    if (
+      !password ||
+      password.length < 8 ||
+      password.length > 30 ||
+      !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)
+    ) {
+      newErrors.password =
+        "Password harus 8-30 karakter, mengandung huruf besar, kecil, angka & simbol";
+    }
 
-    const data = response.data;
-    console.log("✅ Login berhasil:", data);
-    
-    // Store tokens in localStorage
-    localStorage.setItem("Sellertoken", data.token); // General token
-    localStorage.setItem("refreshToken", data.refreshToken); // Refresh token
+    return newErrors;
+  };
 
-    // Redirect to the dashboard or appropriate page
-    navigate("/seller/dashboard"); // Change to the appropriate route
-  } catch (err) {
-    console.error("❌ Error response:", err.response?.data || err.message);
-    setError(err.response?.data?.message || "Something went wrong");
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError({});
+    const validationErrors = validate();
+  
+    if (Object.keys(validationErrors).length > 0) {
+      setError(validationErrors);
+      return;
+    }
+  
+    try {
+      setLoading(true);
+      const response = await axios.post(
+        "/auth/login",
+        formData,
+        { headers: { "Content-Type": "application/json" } }
+      );
+  
+      const { token, data } = response.data;
+  
+      if (token && data) {
+        if (data.role !== "SELLER") {
+          setError({ general: "Akun ini bukan akun penjual." });
+          return;
+        }
+  
+        // Simpan ke localStorage
+        localStorage.setItem("Sellertoken", token);
+        localStorage.setItem("user", JSON.stringify(data));
+        localStorage.setItem("role", data.role);
+        localStorage.setItem("refreshToken", data.refreshToken);
+  
+        // Update context state
+        login({
+          userData: data,
+          token: token,
+          refreshToken: data.refreshToken,
+          role: data.role
+        });
+  
+        navigate("/seller/dashboard");
+      } else {
+        setError({ general: "Login gagal: Respons tidak valid dari server." });
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message ||
+        "Terjadi kesalahan saat login. Silakan coba lagi.";
+      setError({ general: errorMessage });
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
 
   return (
-    <div className="w-full p-8">
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">Login as a Seller</h2>
-      {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <div>
-          <label className="block text-white">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your email"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-green-300"
-          />
-        </div>
-        <div>
-          <label className="block text-white">Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            placeholder="Enter your password"
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-green-300"
-          />
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center justify-start w-1/2">
-            <div className="mt-4 text-sm">
-              <span className="text-white">Don't have an account? </span>
-              <a href="/seller/register" className="text-blue-500 hover:underline">
-                Register as Seller
-              </a>
-            </div>
-          </div>
-          <div className="flex items-center justify-end w-1/2">
-            <button
-              type="submit"
-              className="px-6 py-2 rounded-lg text-white font-medium"
-              style={{
-                background: "linear-gradient(90deg, #091057, #024CAA)",
-              }}
-              disabled={loading}
-            >
-              {loading ? "Processing..." : buttonText}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4 w-full">
+    <div className="w-full max-w-md mx-auto p-8 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold text-center mb-6">Login Penjual</h2>
+
+      {error.general && (
+        <p className="text-red-500 text-sm text-center mb-4">{error.general}</p>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <InputField
+          label="Email"
+          type="email"
+          name="email"
+          value={formData.email}
+          onChange={handleChange}
+          error={error.email}
+        />
+
+        <PasswordField
+          label="Password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          showPassword={showPassword}
+          togglePasswordVisibility={togglePasswordVisibility}
+          error={error.password}
+        />
+
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <span className="text-sm">
+            Belum punya akun?{" "}
+            <Link to="/seller/register" className="text-blue-600 underline">
+              Daftar di sini
+            </Link>
+          </span>
+
           <button
-            className="flex-1 px-4 py-2 rounded-lg shadow"
-            style={{
-              background: 'linear-gradient(90deg, #091057, #024CAA)',
-              color: 'white',
-            }}
-            onClick={() => navigate('/user/login')}
+            type="submit"
+            disabled={loading}
+            className={`px-6 py-2 rounded-lg text-white font-semibold bg-blue-600 hover:bg-blue-700 ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            Login as User
+            {loading ? "Loading..." : buttonText}
           </button>
         </div>
       </form>
+
+      <div className="mt-4 text-center">
+        <Link to="/seller/forgot-password" className="text-blue-500 hover:underline">
+          Lupa Password?
+        </Link>
+      </div>
+
+      <div className="mt-4 text-center">
+        <button
+          onClick={() => navigate("/user/login")}
+          className="text-blue-500 hover:underline"
+        >
+          Login sebagai Pengguna
+        </button>
+      </div>
     </div>
   );
 };
+
+const InputField = ({ label, name, value, onChange, error, type = "text" }) => (
+  <div>
+    <label className="block mb-1 font-semibold" htmlFor={name}>
+      {label}
+    </label>
+    <input
+      type={type}
+      name={name}
+      id={name}
+      value={value}
+      onChange={onChange}
+      autoComplete={name}
+      className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+        error ? "border-red-500 ring-red-300" : "focus:ring-blue-400"
+      }`}
+    />
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
+
+const PasswordField = ({
+  label,
+  name,
+  value,
+  onChange,
+  showPassword,
+  togglePasswordVisibility,
+  error,
+}) => (
+  <div>
+    <label className="block mb-1 font-semibold" htmlFor={name}>
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        type={showPassword ? "text" : "password"}
+        name={name}
+        id={name}
+        value={value}
+        onChange={onChange}
+        autoComplete="current-password"
+        className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+          error ? "border-red-500 ring-red-300" : "focus:ring-blue-400"
+        }`}
+      />
+      <button
+        type="button"
+        onClick={togglePasswordVisibility}
+        aria-label="Toggle password visibility"
+        className="absolute right-2 top-2 text-gray-600 text-sm"
+      >
+        {showPassword ? "🙈" : "👁️"}
+      </button>
+    </div>
+    {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
+  </div>
+);
 
 export default AuthFormSellerLogin;

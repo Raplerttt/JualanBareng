@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import FraudStatusBadge from './FraudStatusBadges';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, DocumentTextIcon, PhotoIcon, VideoCameraIcon } from '@heroicons/react/24/outline';
 
-const FraudCaseTable = ({ fraudCases, updateCaseStatus, blockAccount }) => {
-  const [sortConfig, setSortConfig] = useState({ key: 'reportedDate', direction: 'desc' });
+const FraudCaseTable = ({ fraudCases, updateCaseStatus, openEvidenceModal }) => {
+  const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
   const [expandedRow, setExpandedRow] = useState(null);
 
-  // Sorting logic
-  const sortedCases = useMemo(() => {
+  // Fungsi untuk sorting
+  const sortedCases = React.useMemo(() => {
     let sortableItems = [...fraudCases];
     if (sortConfig.key) {
       sortableItems.sort((a, b) => {
@@ -23,6 +23,7 @@ const FraudCaseTable = ({ fraudCases, updateCaseStatus, blockAccount }) => {
     return sortableItems;
   }, [fraudCases, sortConfig]);
 
+  // Fungsi untuk mengubah sorting
   const requestSort = (key) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
@@ -31,12 +32,29 @@ const FraudCaseTable = ({ fraudCases, updateCaseStatus, blockAccount }) => {
     setSortConfig({ key, direction });
   };
 
-  const formatCurrency = (amount, currency) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-    }).format(amount);
+  // Fungsi untuk mengubah status
+  const handleStatusChange = (id, e) => {
+    updateCaseStatus(id, e.target.value);
+  };
+
+  // Fungsi untuk membuka modal bukti
+  const handleOpenEvidence = (e, caseItem) => {
+    e.stopPropagation();
+    openEvidenceModal(caseItem);
+  };
+
+  // Render icon berdasarkan tipe bukti
+  const renderEvidenceIcon = (type) => {
+    switch (type) {
+      case 'image':
+        return <PhotoIcon className="h-4 w-4 text-blue-500" />;
+      case 'video':
+        return <VideoCameraIcon className="h-4 w-4 text-purple-500" />;
+      case 'chat':
+        return <DocumentTextIcon className="h-4 w-4 text-green-500" />;
+      default:
+        return <DocumentTextIcon className="h-4 w-4 text-gray-500" />;
+    }
   };
 
   return (
@@ -44,198 +62,193 @@ const FraudCaseTable = ({ fraudCases, updateCaseStatus, blockAccount }) => {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
-            {/** Transaction ID Header */}
-            <th
-              scope="col"
+            <th 
+              scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => requestSort('transactionId')}
+              onClick={() => requestSort('title')}
             >
               <div className="flex items-center">
-                ID Transaksi
-                {sortConfig.key === 'transactionId' && (
-                  sortConfig.direction === 'asc' ? (
-                    <ChevronUpIcon className="ml-1 h-4 w-4" />
-                  ) : (
-                    <ChevronDownIcon className="ml-1 h-4 w-4" />
-                  )
+                Kasus Penipuan
+                {sortConfig.key === 'title' && (
+                  sortConfig.direction === 'asc' ? 
+                  <ChevronUpIcon className="ml-1 h-4 w-4" /> : 
+                  <ChevronDownIcon className="ml-1 h-4 w-4" />
                 )}
               </div>
             </th>
-
-            {/** Reporter Header */}
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Pelapor
-            </th>
-
-            {/** Amount Header */}
-            <th
-              scope="col"
+            <th 
+              scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => requestSort('amount')}
+              onClick={() => requestSort('severity')}
             >
               <div className="flex items-center">
-                Jumlah
-                {sortConfig.key === 'amount' && (
-                  sortConfig.direction === 'asc' ? (
-                    <ChevronUpIcon className="ml-1 h-4 w-4" />
-                  ) : (
-                    <ChevronDownIcon className="ml-1 h-4 w-4" />
-                  )
+                Keparahan
+                {sortConfig.key === 'severity' && (
+                  sortConfig.direction === 'asc' ? 
+                  <ChevronUpIcon className="ml-1 h-4 w-4" /> : 
+                  <ChevronDownIcon className="ml-1 h-4 w-4" />
                 )}
               </div>
             </th>
-
-            {/** Status Header */}
-            <th
-              scope="col"
-              className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-            >
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Status
             </th>
-
-            {/** Reported Date Header */}
-            <th
-              scope="col"
+            <th 
+              scope="col" 
               className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-              onClick={() => requestSort('reportedDate')}
+              onClick={() => requestSort('createdAt')}
             >
               <div className="flex items-center">
                 Dilaporkan
-                {sortConfig.key === 'reportedDate' && (
-                  sortConfig.direction === 'asc' ? (
-                    <ChevronUpIcon className="ml-1 h-4 w-4" />
-                  ) : (
-                    <ChevronDownIcon className="ml-1 h-4 w-4" />
-                  )
+                {sortConfig.key === 'createdAt' && (
+                  sortConfig.direction === 'asc' ? 
+                  <ChevronUpIcon className="ml-1 h-4 w-4" /> : 
+                  <ChevronDownIcon className="ml-1 h-4 w-4" />
                 )}
               </div>
             </th>
-
+            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Bukti
+            </th>
             <th scope="col" className="relative px-6 py-3">
               <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
-
         <tbody className="bg-white divide-y divide-gray-200">
-          {sortedCases.length === 0 && (
-            <tr>
-              <td colSpan="6" className="text-center py-12 text-gray-500">
-                Tidak ada kasus penipuan yang ditemukan.<br />
-                <span className="text-sm text-gray-400">Coba ubah filter pencarian Anda.</span>
-              </td>
-            </tr>
-          )}
-
-          {sortedCases.map((fraudCase) => (
-            <React.Fragment key={fraudCase.id}>
-              <tr
+          {sortedCases.map((caseItem) => (
+            <React.Fragment key={caseItem.id}>
+              <tr 
                 className="hover:bg-gray-50 cursor-pointer"
-                onClick={() => setExpandedRow(expandedRow === fraudCase.id ? null : fraudCase.id)}
+                onClick={() => setExpandedRow(expandedRow === caseItem.id ? null : caseItem.id)}
               >
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                  {fraudCase.transactionId}
+                <td className="px-6 py-4">
+                  <div className="font-medium text-gray-900">{caseItem.title}</div>
+                  <div className="text-sm text-gray-500 truncate max-w-xs">{caseItem.description}</div>
+                  <div className="mt-1 text-xs">
+                    <span className="font-medium">Pelapor:</span> {caseItem.reporter}
+                    <span className="mx-2">•</span>
+                    <span className="font-medium">Dilaporkan:</span> {caseItem.reportedUser}
+                  </div>
                 </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {fraudCase.reporter}
-                </td>
-
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {formatCurrency(fraudCase.amount, fraudCase.currency)}
-                </td>
-
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <FraudStatusBadge status={fraudCase.status} />
+                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    caseItem.severity === 'critical' ? 'bg-purple-100 text-purple-800' :
+                    caseItem.severity === 'high' ? 'bg-red-100 text-red-800' :
+                    caseItem.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-blue-100 text-blue-800'
+                  }`}>
+                    {caseItem.severity.charAt(0).toUpperCase() + caseItem.severity.slice(1)}
+                  </span>
                 </td>
-
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <FraudStatusBadge status={caseItem.status} />
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {fraudCase.reportedDate}
+                  {caseItem.createdAt}
                 </td>
-
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    {caseItem.evidence.slice(0, 3).map((evidence, idx) => (
+                      <div key={idx} className="mr-1">
+                        {renderEvidenceIcon(evidence.type)}
+                      </div>
+                    ))}
+                    {caseItem.evidence.length > 3 && (
+                      <span className="text-xs text-gray-500 ml-1">
+                        +{caseItem.evidence.length - 3}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <select
-                    value={fraudCase.status}
-                    onChange={(e) => updateCaseStatus(fraudCase.id, e.target.value)}
-                    onClick={(e) => e.stopPropagation()}
-                    className={`block w-full py-1 px-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs ${
-                      fraudCase.status === 'open'
-                        ? 'bg-red-50'
-                        : fraudCase.status === 'investigating'
-                        ? 'bg-yellow-50'
-                        : fraudCase.status === 'resolved'
-                        ? 'bg-green-50'
-                        : 'bg-gray-50'
-                    }`}
-                  >
-                    <option value="open">Open</option>
-                    <option value="investigating">Investigating</option>
-                    <option value="resolved">Resolved</option>
-                    <option value="closed">Closed</option>
-                  </select>
+                  <div className="flex space-x-2 justify-end">
+                    <button 
+                      onClick={(e) => handleOpenEvidence(e, caseItem)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      Lihat Bukti
+                    </button>
+                    <select
+                      value={caseItem.status}
+                      onChange={(e) => handleStatusChange(caseItem.id, e)}
+                      onClick={(e) => e.stopPropagation()}
+                      className={`block py-1 px-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-xs ${
+                        caseItem.status === 'open' ? 'bg-red-50' :
+                        caseItem.status === 'investigating' ? 'bg-yellow-50' :
+                        caseItem.status === 'resolved' ? 'bg-green-50' : 'bg-gray-50'
+                      }`}
+                    >
+                      <option value="open">Open</option>
+                      <option value="investigating">Investigating</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
                 </td>
               </tr>
-
+              
               {/* Expanded Row */}
-              {expandedRow === fraudCase.id && (
+              {expandedRow === caseItem.id && (
                 <tr className="bg-blue-50">
                   <td colSpan="6" className="px-6 py-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">Deskripsi Kasus</h3>
-                        <p className="mt-1 text-sm text-gray-700">{fraudCase.description}</p>
-
-                        <h3 className="text-sm font-medium text-gray-900 mt-4">Catatan</h3>
-                        <p className="mt-1 text-sm text-gray-700">{fraudCase.notes}</p>
+                        <h3 className="text-sm font-medium text-gray-900">Detail Kasus</h3>
+                        <p className="mt-1 text-sm text-gray-700">{caseItem.description}</p>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">Pelapor</span>
+                            <p className="text-sm">{caseItem.reporter}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">Dilaporkan</span>
+                            <p className="text-sm">{caseItem.reportedUser}</p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">Kerugian</span>
+                            <p className="text-sm">
+                              {caseItem.amount > 0 
+                                ? `Rp${caseItem.amount.toLocaleString()}` 
+                                : 'Tidak ada kerugian finansial'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="text-xs font-medium text-gray-500">Tanggal</span>
+                            <p className="text-sm">{caseItem.createdAt}</p>
+                          </div>
+                        </div>
                       </div>
-
                       <div>
                         <h3 className="text-sm font-medium text-gray-900">Bukti</h3>
-                        <ul className="mt-1 text-sm text-gray-700">
-                          {fraudCase.evidence.map((file, index) => (
-                            <li key={index} className="flex items-center">
-                              <span className="mr-2">📄</span>
-                              <a
-                                href="#"
-                                className="text-blue-600 hover:text-blue-800"
-                                onClick={(e) => e.preventDefault()}
-                              >
-                                {file}
-                              </a>
-                            </li>
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {caseItem.evidence.map((evidence, idx) => (
+                            <div key={idx} className="flex items-center text-sm">
+                              {renderEvidenceIcon(evidence.type)}
+                              <span className="ml-1 text-gray-700 capitalize">{evidence.type}</span>
+                            </div>
                           ))}
-                        </ul>
+                        </div>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEvidenceModal(caseItem);
+                          }}
+                          className="mt-3 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          Lihat Detail Bukti
+                        </button>
                       </div>
-
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900">Tindakan</h3>
-                        <div className="mt-2 space-y-2">
-                          <button
-                            className="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none"
-                            onClick={() => blockAccount(fraudCase.id, 'pembeli', fraudCase.reporter)}
-                          >
-                            Blokir Akun Pembeli
+                        <h3 className="text-sm font-medium text-gray-900">Actions</h3>
+                        <div className="mt-2 flex flex-col space-y-2">
+                          <button className="inline-flex items-center justify-center px-3 py-1 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none">
+                            Blokir Akun
                           </button>
-
-                          <button
-                            className="w-full inline-flex justify-center items-center px-3 py-2 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none"
-                            onClick={() => blockAccount(fraudCase.id, 'penjual', 'seller_xxx')}
-                          >
-                            Blokir Akun Penjual
+                          <button className="inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                            Hubungi Pengguna
                           </button>
-
-                          <button
-                            className="w-full inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                          >
-                            Proses Refund
-                          </button>
-
-                          <button
-                            className="w-full inline-flex justify-center items-center px-3 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                          >
+                          <button className="inline-flex items-center justify-center px-3 py-1 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                             Tambah Catatan
                           </button>
                         </div>
@@ -248,6 +261,13 @@ const FraudCaseTable = ({ fraudCases, updateCaseStatus, blockAccount }) => {
           ))}
         </tbody>
       </table>
+      
+      {sortedCases.length === 0 && (
+        <div className="text-center py-12">
+          <div className="text-gray-500">Tidak ada kasus penipuan yang ditemukan</div>
+          <div className="mt-2 text-sm text-gray-400">Coba ubah filter pencarian Anda</div>
+        </div>
+      )}
     </div>
   );
 };

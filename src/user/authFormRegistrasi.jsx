@@ -1,9 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../../utils/axios"; // Import instance axios yang sudah dikonfigurasi
-import { GoogleLogin } from 'react-google-login'; // Import GoogleLogin
-import FacebookLogin from 'react-facebook-login'; // Import FacebookLogin
-import { FaGoogle, FaFacebook } from 'react-icons/fa'; // Import ikon untuk media sosial
 
 const AuthFormRegister = ({ buttonText = "Register" }) => {
   const navigate = useNavigate();
@@ -80,42 +77,6 @@ const AuthFormRegister = ({ buttonText = "Register" }) => {
     }
   };
 
-  const handleGoogleLoginSuccess = async (response) => {
-    const { tokenId } = response; // Ambil tokenId dari respons Google
-    try {
-      const res = await axios.post('/auth/google-login', { idToken: tokenId }); // Kirim tokenId ke backend
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-      navigate("/"); // Redirect setelah login
-    } catch (error) {
-      console.error("Google login failed:", error);
-      setError({ general: "Login dengan Google gagal!" });
-    }
-  };
-
-  const handleGoogleLoginFailure = (error) => {
-    console.error("Google login error:", error);
-    setError({ general: "Login dengan Google gagal!" });
-  };
-
-  const responseFacebook = async (response) => {
-    const { accessToken } = response; // Ambil accessToken dari respons Facebook
-    try {
-      const res = await axios.post('/auth/facebook-login', { accessToken }); // Kirim accessToken ke backend
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-      navigate("/"); // Redirect setelah login
-    } catch (error) {
-      console.error("Facebook login failed:", error);
-      setError({ general: "Login dengan Facebook gagal!" });
-    }
-  };
-
-  const handleFacebookLoginFailure = (error) => {
-    console.error("Facebook login error:", error);
-    setError({ general: "Login dengan Facebook gagal!" });
-  };
-
   const togglePasswordVisibility = useCallback(() => {
     setShowPassword((prev) => !prev);
   }, []);
@@ -139,27 +100,6 @@ const AuthFormRegister = ({ buttonText = "Register" }) => {
           </button>
         </div>
       </form>
-
-      {/* Social Media Login Buttons */}
-      <div className="mt-6 flex justify-center space-x-4">
-        <GoogleLogin
-          clientId="YOUR_GOOGLE_CLIENT_ID" // Ganti dengan Client ID Anda
-          buttonText="Login with Google"
-          onSuccess={handleGoogleLoginSuccess}
-          onFailure={handleGoogleLoginFailure}
-          cookiePolicy={'single_host_origin'}
-          className="flex items-center px-4 py-2 border rounded-lg text-gray-700 border-gray-300 hover:bg-gray-100"
-        />
-        <FacebookLogin
-          appId="YOUR_FACEBOOK_APP_ID" // Ganti dengan App ID Anda
-          autoLoad={false}
-          fields="name,email,picture"
-          callback={responseFacebook}
-          onFailure={handleFacebookLoginFailure}
-          cssClass="flex items-center px-4 py-2 border rounded-lg text-gray-700 border-gray-300 hover:bg-gray-100"
-          textButton={<><FaFacebook className="mr-2" />Login with Facebook</>}
-        />
-      </div>
     </div>
   );
 };

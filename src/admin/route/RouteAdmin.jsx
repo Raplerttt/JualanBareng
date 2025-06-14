@@ -6,7 +6,7 @@ import Dashboard from "../AdminDashboard";
 import BugReports from "../BugReports";
 import FraudCases from "../FraudCases";
 import Analytics from "../SystemAnalytics";
-// import Settings from "../pages/admin/Settings";
+import Settings from "../Setting";
 
 function AdminRoutes() {
   return (
@@ -15,7 +15,7 @@ function AdminRoutes() {
       <Route path="/bug-reports" element={<BugReports />} />
       <Route path="/fraud-cases" element={<FraudCases />} />
       <Route path="/analytics" element={<Analytics />} />
-      {/* <Route path="/settings" element={<Settings />} /> */}
+      <Route path="/settings" element={<Settings />} />
     </Routes>
   );
 }

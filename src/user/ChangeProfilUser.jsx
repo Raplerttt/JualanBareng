@@ -1,323 +1,352 @@
-import React, { useState, useEffect } from "react";
-import axios from "../../utils/axios";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiEdit, FiSave, FiUpload, FiUser, FiMail, FiPhone, FiLock } from "react-icons/fi";
+import axios from "../../utils/axios";
+import { FiUser, FiMail, FiPhone, FiHome, FiEdit, FiSave, FiUpload } from "react-icons/fi";
+import { motion } from "framer-motion";
+import { FaSpinner } from "react-icons/fa";
 
 const ChangeProfileUser = () => {
-  const [profileImage, setProfileImage] = useState(null);
-  const [newPassword, setNewPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState({});
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
+  const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get("/users/profile", {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        const token = localStorage.getItem("token");
+        if (!token) {
+          navigate("/user/login");
+          return;
+        }
+        const response = await axios.get("/users", {
+          headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("API Response:", response.data);
         setUser(response.data.user);
-        setEditedUser(response.data.user);
+        setEditedUser({
+          fullName: response.data.user.fullName,
+          email: response.data.user.email,
+          phoneNumber: response.data.user.phoneNumber,
+        });
+        setLoading(false);
       } catch (error) {
         console.error("Failed to fetch user data:", error);
+        setError(error.response?.data?.message || "Failed to load profile");
+        setLoading(false);
       }
     };
 
     fetchUser();
-  }, []);
+  }, [navigate]);
 
-  const handleProfileImageChange = (e) => {
-    const file = e.target.files[0];
-
-    if (file) {
-      if (!file.type.startsWith("image/")) {
-        alert("Please select an image file!");
-        return;
-      }
-      setProfileImage(file);
-    }
-  };
-
-  const handleUploadProfileImage = async () => {
-    if (!profileImage) {
-      alert("Please select an image first!");
-      return;
-    }
-
-    const formData = new FormData();
-    formData.append("profileImage", profileImage);
-
-    try {
-      await axios.post("/users/upload-profile", formData, {
-        headers: { 
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data"
-        },
-      });
-      alert("Profile image updated successfully!");
-      // Refresh user data
-      const response = await axios.get("/users/profile", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      setUser(response.data.user);
-      setProfileImage(null);
-    } catch (error) {
-      console.error("Failed to update profile image:", error);
-      alert("Failed to update profile image. Please try again.");
-    }
-  };
-
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setEditedUser({ ...editedUser, [name]: value });
+    setEditedUser((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSaveChanges = async () => {
+  // Handle image selection
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Save profile changes
+  const handleSave = async () => {
     try {
-      await axios.put("/users", editedUser, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      const token = localStorage.getItem("token");
+      if (!token) {
+        navigate("/user/login");
+        return;
+      }
+  
+      setLoading(true);
+  
+      // Gunakan FormData untuk semua data
+      const formData = new FormData();
+      formData.append("fullName", editedUser.fullName);
+      formData.append("email", editedUser.email);
+      formData.append("phoneNumber", editedUser.phoneNumber);
+  
+      if (imageFile) {
+        formData.append("photo", imageFile); // ✅ field name harus "photo"
+      }
+  
+      // Ganti :id dengan user.id
+      await axios.put(`/users/${user.id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
       });
-      alert("Changes saved successfully!");
-      setUser(editedUser);
+  
+      // Refresh user data
+      const response = await axios.get("/users", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setUser(response.data.user);
       setIsEditing(false);
+      setImagePreview(null);
+      setImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      setLoading(false);
     } catch (error) {
-      console.error("Failed to save changes:", error);
-      alert("Failed to save changes. Please try again.");
+      console.error("Failed to save profile:", error);
+      setError(error.response?.data?.message || "Failed to save profile");
+      setLoading(false);
+    }
+  };
+  
+
+  // Toggle edit mode
+  const toggleEdit = () => {
+    setIsEditing(!isEditing);
+    if (isEditing) {
+      setEditedUser({
+        fullName: user.fullName,
+        email: user.email,
+        phoneNumber: user.phoneNumber,
+      });
+      setImagePreview(null);
+      setImageFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
-  const handlePasswordChange = async () => {
-    if (!newPassword.trim()) {
-      alert("Please enter a valid new password!");
-      return;
-    }
-
-    try {
-      await axios.post(
-        "/users/change-password",
-        { newPassword },
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
-      alert("Password changed successfully!");
-      setNewPassword("");
-      setShowPasswordModal(false);
-    } catch (error) {
-      console.error("Failed to change password:", error);
-      alert("Failed to change password. Please try again.");
-    }
-  };
-
-  if (!user) {
+  if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex justify-center items-center bg-gray-50">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+        >
+          <FaSpinner className="text-blue-500 text-3xl" />
+        </motion.div>
       </div>
     );
   }
 
-  return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6">
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
-          <h1 className="text-2xl font-bold">User Profile</h1>
-          <p className="opacity-90">Manage your account information</p>
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col items-center justify-center bg-gray-50"
+      >
+        <div className="bg-white p-6 rounded-xl shadow-md text-center max-w-xs">
+          <p className="text-red-500 text-base font-medium mb-3">{error}</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center mx-auto text-sm"
+          >
+            <FiHome className="mr-1.5" />
+            Back to Home
+          </button>
         </div>
+      </motion.div>
+    );
+  }
 
-        {/* Main Content */}
-        <div className="p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Profile Picture Section */}
-          <div className="md:col-span-1 flex flex-col items-center">
-            <div className="relative group">
-              <img
-                src={
-                  profileImage 
-                    ? URL.createObjectURL(profileImage) 
-                    : user.profilePicture || "https://ui-avatars.com/api/?name=" + encodeURIComponent(user.fullName || "User") + "&background=random"
-                }
-                alt="Profile"
-                className="w-40 h-40 rounded-full object-cover border-4 border-white shadow-lg"
-              />
-              <label className="absolute inset-0 bg-black bg-opacity-30 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <FiUpload className="text-white text-2xl" />
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleProfileImageChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
+  if (!user) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col items-center justify-center bg-gray-50"
+      >
+        <div className="bg-white p-6 rounded-xl shadow-md text-center max-w-xs">
+          <p className="text-gray-500 text-base font-medium mb-3">User not found</p>
+          <button
+            onClick={() => navigate("/")}
+            className="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center mx-auto text-sm"
+          >
+            <FiHome className="mr-1.5" />
+            Back to Home
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
-            <button
-              onClick={handleUploadProfileImage}
-              disabled={!profileImage}
-              className={`mt-4 px-4 py-2 rounded-lg flex items-center transition-all ${
-                profileImage
-                  ? "bg-blue-600 text-white hover:bg-blue-700"
-                  : "bg-gray-200 text-gray-500 cursor-not-allowed"
-              }`}
-            >
-              <FiSave className="mr-2" />
-              Save Picture
-            </button>
-
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="mt-4 px-4 py-2 text-blue-600 hover:text-blue-800 flex items-center"
-            >
-              <FiLock className="mr-2" />
-              Change Password
-            </button>
-          </div>
-
-          {/* Profile Information */}
-          <div className="md:col-span-2 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Full Name */}
-              <div className="space-y-1">
-                <label className="flex items-center text-gray-700 font-medium">
-                  <FiUser className="mr-2" />
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={editedUser.fullName || ""}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                    isEditing
-                      ? "border-blue-300 focus:ring-blue-200 bg-white"
-                      : "border-gray-200 bg-gray-50"
-                  }`}
-                  disabled={!isEditing}
-                />
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="bg-gray-50 py-6 px-4 sm:px-6"
+    >
+      <div className="max-w-3xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-500 to-blue-700 p-6 text-white">
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-2xl font-bold tracking-tight">User Profile</h1>
+                <p className="mt-1 text-xs opacity-80">Manage your account details</p>
               </div>
-
-              {/* Email */}
-              <div className="space-y-1">
-                <label className="flex items-center text-gray-700 font-medium">
-                  <FiMail className="mr-2" />
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={editedUser.email || ""}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                    isEditing
-                      ? "border-blue-300 focus:ring-blue-200 bg-white"
-                      : "border-gray-200 bg-gray-50"
-                  }`}
-                  disabled={!isEditing}
-                />
-              </div>
-
-              {/* Phone Number */}
-              <div className="space-y-1">
-                <label className="flex items-center text-gray-700 font-medium">
-                  <FiPhone className="mr-2" />
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  name="phoneNumber"
-                  value={editedUser.phoneNumber || ""}
-                  onChange={handleInputChange}
-                  className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                    isEditing
-                      ? "border-blue-300 focus:ring-blue-200 bg-white"
-                      : "border-gray-200 bg-gray-50"
-                  }`}
-                  disabled={!isEditing}
-                />
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-4 pt-4">
-              {isEditing && (
-                <button
-                  onClick={() => {
-                    setEditedUser(user);
-                    setIsEditing(false);
-                  }}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-              )}
               <button
-                onClick={() => {
-                  if (isEditing) {
-                    handleSaveChanges();
-                  } else {
-                    setIsEditing(true);
-                  }
-                }}
-                className={`px-4 py-2 rounded-lg flex items-center transition-colors ${
-                  isEditing
-                    ? "bg-green-600 text-white hover:bg-green-700"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
-                }`}
+                onClick={toggleEdit}
+                className="px-4 py-1.5 bg-white text-blue-600 rounded-lg hover:bg-gray-100 transition-colors flex items-center text-sm"
               >
                 {isEditing ? (
                   <>
-                    <FiSave className="mr-2" />
-                    Save Changes
+                    <FiSave className="mr-1.5" />
+                    Save
                   </>
                 ) : (
                   <>
-                    <FiEdit className="mr-2" />
-                    Edit Profile
+                    <FiEdit className="mr-1.5" />
+                    Edit
                   </>
                 )}
               </button>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Password Change Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-semibold mb-4">Change Password</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-gray-700 mb-1">New Password</label>
+          {/* Main Content */}
+          <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Profile Picture Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="md:col-span-1 flex flex-col items-center"
+            >
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-400 to-blue-600 p-1">
+                <img
+                  src={
+                    imagePreview ||
+                    (user.photo
+                      ? `http://localhost:3000/uploads/users/${user.photo}`
+                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}&background=3B82F6&color=FFFFFF`)
+                  }
+                  alt="Profile"
+                  className="w-full h-full rounded-full object-cover"
+                />
+                </div>
+                {isEditing && (
+                  <button
+                    onClick={() => fileInputRef.current.click()}
+                    className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors"
+                  >
+                    <FiUpload className="text-sm" />
+                  </button>
+                )}
                 <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-200"
-                  placeholder="Enter new password"
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleImageChange}
+                  className="hidden"
                 />
               </div>
-              <div className="flex justify-end space-x-3 pt-2">
-                <button
-                  onClick={() => setShowPasswordModal(false)}
-                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handlePasswordChange}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Change Password
-                </button>
+              <p className="mt-3 text-lg font-semibold text-gray-900">{user.fullName}</p>
+              <p className="text-xs text-gray-500 capitalize">{user.role}</p>
+            </motion.div>
+
+            {/* Profile Information */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="md:col-span-2 space-y-4"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Full Name */}
+                <div className="space-y-1">
+                  <label className="flex items-center text-gray-700 font-medium text-xs">
+                    <FiUser className="mr-1.5 text-blue-500" />
+                    Full Name
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={editedUser.fullName || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  ) : (
+                    <div className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 shadow-sm text-sm">
+                      <p className="text-gray-900">{user.fullName || "-"}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div className="space-y-1">
+                  <label className="flex items-center text-gray-700 font-medium text-xs">
+                    <FiMail className="mr-1.5 text-blue-500" />
+                    Email
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      name="email"
+                      value={editedUser.email || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  ) : (
+                    <div className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 shadow-sm text-sm">
+                      <p className="text-gray-900">{user.email || "-"}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Phone Number */}
+                <div className="space-y-1">
+                  <label className="flex items-center text-gray-700 font-medium text-xs">
+                    <FiPhone className="mr-1.5 text-blue-500" />
+                    Phone Number
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="phoneNumber"
+                      value={editedUser.phoneNumber || ""}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    />
+                  ) : (
+                    <div className="w-full px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 shadow-sm text-sm">
+                      <p className="text-gray-900">{user.phoneNumber || "-"}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+              {isEditing && (
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleSave}
+                    className="px-4 py-1.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors flex items-center text-sm"
+                  >
+                    <FiSave className="mr-1.5" />
+                    Save Changes
+                  </button>
+                </div>
+              )}
+            </motion.div>
           </div>
         </div>
-      )}
-    </div>
+      </div>
+    </motion.div>
   );
 };
 

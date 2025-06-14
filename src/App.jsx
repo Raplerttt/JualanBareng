@@ -16,6 +16,7 @@ import UseLoading from "./hooks/UseLoading";
 import Loading from "./components/Loading";
 import { AuthProvider } from "./auth/authContext";
 import AdminLayout from "./admin/layout/AdminLayout";
+import ProductDetailPages from "./pages/ProductDetailPages";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
@@ -50,6 +51,7 @@ function AppContent() {
       {isLoading && <Loading />}
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/product/:id" element={<ProductDetailPages />} />
         <Route path="/chat" element={<ChatPages />} />
         <Route path="/detail-order/:id" element={<DetailOrderPages />} />
         <Route path="/detail-store/:id" element={<DetailStorePages />} />

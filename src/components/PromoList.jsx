@@ -1,59 +1,138 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PromoCard from './PromoCard';
+import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom';
 
 const PromoList = () => {
+  const [promos, setPromos] = useState([]);
   const [claimedVouchers, setClaimedVouchers] = useState(new Set());
   const [notification, setNotification] = useState({ show: false, message: '', isError: false });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
-  const promos = [
-    {
-      id: 1,
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      title: "Promo Diskon 10%",
-      description: "Dapatkan potongan 10% untuk semua makanan!",
-      code: "DISCOUNT10",
-      validUntil: "2023-12-31",
-    },
-    {
-      id: 2,
-      image: "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80",
-      title: "Promo Gratis Ongkir",
-      description: "Nikmati gratis ongkir untuk setiap pembelian di atas Rp 50.000",
-      code: "FREESHIP",
-      validUntil: "2023-11-30",
-    },
-    {
-      id: 3,
-      image: "https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      title: "Promo Cashback 20%",
-      description: "Dapatkan cashback 20% untuk pembelian pertama!",
-      code: "CASHBACK20",
-      validUntil: "2024-01-15",
-    },
-    {
-      id: 4,
-      image: "https://images.unsplash.com/photo-1555244162-803834f70033?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      title: "Promo Spesial Weekend",
-      description: "Diskon tambahan 15% hanya untuk hari Sabtu dan Minggu!",
-      code: "WEEKEND15",
-      validUntil: "2023-12-25",
-    },
-  ];
+  useEffect(() => {
+    const fetchPromos = async () => {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem('user'));
+      const userId = user?.id;
+  
+      try {
+        // 1. Fetch all vouchers
+        const response = await axios.get('/vouchers', {
+          params: {
+            page: 1,
+            limit: 10,
+            search: ''
+          }
+        });
+  
+        const vouchers = response.data.data.map(voucher => ({
+          id: voucher.id,
+          title: voucher.name,
+          description: generateDescription(voucher),
+          code: voucher.code,
+          validUntil: formatDate(voucher.expiryAt)
+        }));
+  
+        setPromos(vouchers);
+        setLoading(false);
+  
+        // 2. Fetch claimed vouchers (only if user is logged in)
+        if (token && userId) {
+          try {
+            const claimedResponse = await axios.get(`/vouchers/claimed?userId=${userId}`, {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+  
+            const claimedCodes = claimedResponse.data.data.map(v => v.code);
+            setClaimedVouchers(new Set(claimedCodes));
+          } catch (err) {
+            console.warn('Failed to fetch claimed vouchers:', err);
+          }
+        }
+  
+      } catch (err) {
+        console.error('Failed to fetch promos:', err);
+        const message = err.response?.data?.message || 'Gagal memuat promo';
+        setError(message);
+  
+        if (err.response?.status === 401) {
+          navigate('/user/login');
+        }
+  
+        setLoading(false);
+      }
+    };
+  
+    fetchPromos();
+  }, [navigate]);
+  
+
+  const generateDescription = (voucher) => {
+    const minPurchase = voucher.minPurchase.toLocaleString('id-ID');
+    switch (voucher.type) {
+      case 'PERSENTASE':
+        return `Diskon ${voucher.discount}% untuk pembelian di atas Rp ${minPurchase}`;
+      case 'NOMINAL':
+        return `Potongan Rp ${voucher.discount.toLocaleString('id-ID')} untuk pembelian di atas Rp ${minPurchase}`;
+      default:
+        return `Nikmati promo spesial ini!`;
+    }
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toISOString().split('T')[0];
+  };
 
   const showNotification = (message, isError = false) => {
     setNotification({ show: true, message, isError });
-    setTimeout(() => setNotification({ ...notification, show: false }), 3000);
+    setTimeout(() => setNotification({ show: false, message: '', isError: false }), 3000);
   };
 
-  const claimVoucher = (code) => {
+  const claimVoucher = async (code) => {
     if (claimedVouchers.has(code)) {
       showNotification(`Voucher ${code} sudah pernah diklaim`, true);
       return;
     }
-
-    setClaimedVouchers(new Set([...claimedVouchers, code]));
-    showNotification(`🎉 Voucher ${code} berhasil diklaim!`);
+  
+    try {
+      const token = localStorage.getItem("token");
+      const user = JSON.parse(localStorage.getItem("user"));
+      const userId = user?.id;
+  
+      if (!token || !userId) {
+        showNotification('Silakan login untuk mengklaim voucher', true);
+        navigate('/user/login');
+        return;
+      }
+  
+      const response = await axios.post('/vouchers/claim', { userId, code }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      setClaimedVouchers(new Set([...claimedVouchers, code]));
+      showNotification(`🎉 Voucher ${code} berhasil diklaim!`);
+    } catch (err) {
+      console.error('Failed to claim voucher:', err);
+      showNotification(err.response?.data?.message || `Gagal mengklaim voucher ${code}`, true);
+    }
   };
+  
+
+  if (loading) {
+    return (
+      <section className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center">
+          <p className="text-lg text-gray-600">Memuat promo...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -77,7 +156,6 @@ const PromoList = () => {
         ))}
       </div>
 
-      {/* Notification Toast */}
       {notification.show && (
         <div className={`fixed bottom-4 right-4 p-4 rounded-lg shadow-lg text-white ${
           notification.isError ? 'bg-red-500' : 'bg-green-500'

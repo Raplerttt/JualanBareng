@@ -1,15 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { FaStar, FaHeart, FaSpinner } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import classNames from 'classnames';
 import axios from '../../utils/axios';
+import toast from 'react-hot-toast';
 
 const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
+  const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleImageError = () => {
     setImageError(true);
+  };
+
+  const handleCardClick = (e) => {
+    if (e.target.closest('.favorite-button')) return;
+    navigate(`/product/${product.id}`);
   };
 
   return (
@@ -18,9 +26,10 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg hover:shadow-2xl transition-all duration-300"
+      className="group relative flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleCardClick}
     >
       <div className="relative w-full h-56 overflow-hidden rounded-t-xl bg-gradient-to-br from-gray-50 to-gray-100">
         {imageError ? (
@@ -31,7 +40,7 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
           <img
             className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
             src={`http://localhost:3000/${product.image}`}
-            alt={product.name}
+            alt={product.productName}
             onError={handleImageError}
             loading="lazy"
           />
@@ -41,9 +50,10 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
           whileTap={{ scale: 0.9 }}
           onClick={(e) => {
             e.preventDefault();
-            onFavoriteToggle(product.id);
+            e.stopPropagation();
+            onFavoriteToggle(product.id, isFavorite);
           }}
-          className="absolute top-3 right-3 cursor-pointer"
+          className="favorite-button absolute top-3 right-3 cursor-pointer"
           aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           role="button"
         >
@@ -66,16 +76,16 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
         <div className="text-sm text-gray-600 space-y-1 mb-3">
           <p className="flex items-center">
             <span className="text-gray-500 mr-1">Category:</span>
-            <span className="text-blue-600 font-medium">{product.categoryName}</span>
+            <span className="text-blue-600 font-medium">{product.category.name}</span>
           </p>
           <p className="flex items-start">
             <span className="text-gray-500 mr-1">Location:</span>
-            <span className="text-gray-700">{product.seller?.location}</span>
+            <span className="text-gray-700">{product.seller?.address}</span>
           </p>
         </div>
         
         <div className="mt-auto flex justify-between items-center">
-          <div className="flex items-center" title={`Rating: ${product.averageRating}`}>
+          <div className="flex items-center" title={`Rating: ${product.rating}`}>
             {Array.from({ length: 5 }, (_, index) => (
               <FaStar
                 key={index}
@@ -87,42 +97,48 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
             ))}
             <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
           </div>
-          
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            className="px-3 py-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium rounded-full shadow-md"
-          >
-            View Details
-          </motion.button>
         </div>
       </div>
     </motion.div>
   );
 };
 
-const ProductRecommendation = () => {
+const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
   const [favorites, setFavorites] = useState({});
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const handleFavoriteToggle = async (id) => {
+  const handleFavoriteToggle = async (id, isCurrentlyFavorite) => {
+    if (!Number.isInteger(id) || id <= 0) {
+      toast.error('Invalid product ID');
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        alert('Please login to save favorites');
+        toast.error('Please login to manage favorites');
         return;
       }
-  
-      await axios.post(
-        '/product/favorites',
-        { productId: id },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-  
+
+      const endpoint = isCurrentlyFavorite ? `/favorites/${id}` : '/favorites';
+      const method = isCurrentlyFavorite ? 'delete' : 'post';
+      const config = {
+        headers: { Authorization: `Bearer ${token}` }
+      };
+
+      if (method === 'post') {
+        await axios.post(endpoint, { productId: id }, config);
+      } else {
+        await axios.delete(endpoint, config);
+      }
+
       setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
+      toast.success(isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites');
     } catch (error) {
+      const message = error.response?.data?.message || 'Failed to update favorite';
+      toast.error(message);
       console.error('Favorite update failed:', error);
     }
   };
@@ -130,9 +146,20 @@ const ProductRecommendation = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await axios.get('/product');
-        console.log('Fetched:', response.data);
-        setProducts(response.data);
+        const token = localStorage.getItem('token');
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        const response = await axios.get('/product', config);
+        setProducts(response.data.data);
+
+        // Fetch initial favorite status if logged in
+        if (token) {
+          const favoritesResponse = await axios.get('/favorites', config);
+          const favoriteIds = favoritesResponse.data.data.reduce((acc, fav) => {
+            acc[fav.productId] = true;
+            return acc;
+          }, {});
+          setFavorites(favoriteIds);
+        }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to fetch products');
       } finally {
@@ -150,8 +177,7 @@ const ProductRecommendation = () => {
         animate={{ opacity: 1, y: 0 }}
         className="text-center mb-12"
       >
-        <h2 className="text-4xl font-bold text-gray-900 mb-2">Discover Our Selection</h2>
-        <p className="text-lg text-gray-600">Curated products just for you</p>
+        <h2 className="text-4xl font-bold text-gray-900 mb-2">{title}</h2>
       </motion.div>
 
       {loading ? (

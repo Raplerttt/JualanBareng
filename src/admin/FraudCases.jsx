@@ -1,199 +1,136 @@
 import React, { useState } from 'react';
-
 import FraudCaseTable from './components/FraudCaseTable';
-
 import FraudFilterPanel from './components/FraudFilterPanel';
+import FraudEvidenceModal from './components/FraudEvidenceModal';
 
 const FraudCases = () => {
-
-const [filters, setFilters] = useState({
-
-status: 'all',
-
-dateRange: 'all',
-
-search: ''
-
-});
-
-// Data dummy kasus penipuan
-
-const [fraudCases, setFraudCases] = useState([
-
-{
-
-id: 1,
-
-transactionId: 'TRX-001',
-
-reporter: 'buyer_123',
-
-amount: 1500000,
-
-currency: 'IDR',
-
-status: 'open',
-
-reportedDate: '2023-06-01',
-
-description: 'Pembeli tidak menerima barang setelah pembayaran',
-
-evidence: ['chat_screen_1.png', 'payment_proof.jpg'],
-
-notes: 'Seller tidak merespons chat'
-
-},
-
-{
-
-id: 2,
-
-transactionId: 'TRX-002',
-
-reporter: 'seller_456',
-
-amount: 2500000,
-
-currency: 'IDR',
-
-status: 'investigating',
-
-reportedDate: '2023-06-03',
-
-description: 'Pembeli melakukan chargeback ilegal',
-
-evidence: ['transaction_log.pdf'],
-
-notes: 'Sedang verifikasi dengan payment gateway'
-
-},
-
-{
-
-id: 3,
-
-transactionId: 'TRX-003',
-
-reporter: 'buyer_789',
-
-amount: 500000,
-
-currency: 'IDR',
-
-status: 'resolved',
-
-reportedDate: '2023-05-28',
-
-description: 'Barang tidak sesuai deskripsi',
-
-evidence: ['product_photo_1.jpg', 'product_photo_2.jpg'],
-
-notes: 'Refund telah diproses'
-
-},
-
-{
-
-id: 4,
-
-transactionId: 'TRX-004',
-
-reporter: 'seller_101',
-
-amount: 3000000,
-
-currency: 'IDR',
-
-status: 'closed',
-
-reportedDate: '2023-06-05',
-
-description: 'Pembeli menggunakan akun palsu',
-
-evidence: ['id_card_fake.jpg'],
-
-notes: 'Akun pembeli telah diblokir'
-
-}
-
-]);
-
-// Update status kasus
-
-const updateCaseStatus = (id, newStatus) => {
-
-setFraudCases(prev => prev.map(c =>
-
-c.id === id ? { ...c, status: newStatus } : c
-
-));
-
-};
-
-// Blokir akun terkait kasus
-
-const blockAccount = (id, accountType, accountId) => {
-
-setFraudCases(prev => prev.map(c =>
-
-c.id === id ? { ...c, status: 'closed', notes: `Akun ${accountType} ${accountId} diblokir` } : c
-
-));
-
-// Di sini seharusnya ada API call untuk blokir akun
-
-};
-
-// Filter data
-
-const filteredCases = fraudCases.filter(fc => {
-
-const matchesStatus = filters.status === 'all' || fc.status === filters.status;
-
-const matchesSearch = fc.transactionId.toLowerCase().includes(filters.search.toLowerCase()) ||
-
-fc.description.toLowerCase().includes(filters.search.toLowerCase());
-
-return matchesStatus && matchesSearch;
-
-});
-
-return (
-
-<div className="p-6">
-
-<div className="flex justify-between items-center mb-6">
-
-<h1 className="text-2xl font-bold text-gray-800">Kasus Penipuan</h1>
-
-<div className="text-sm text-gray-500">
-
-Total: {filteredCases.length} kasus
-
-</div>
-
-</div>
-
-<FraudFilterPanel filters={filters} setFilters={setFilters} />
-
-<div className="mt-6 bg-white rounded-xl shadow overflow-hidden">
-
-<FraudCaseTable
-
-fraudCases={filteredCases}
-
-updateCaseStatus={updateCaseStatus}
-
-blockAccount={blockAccount}
-
-/>
-
-</div>
-
-</div>
-
-);
-
+  const [filters, setFilters] = useState({
+    status: 'all',
+    severity: 'all',
+    search: '',
+    reporterType: 'all'
+  });
+  
+  const [selectedCase, setSelectedCase] = useState(null);
+  const [showEvidenceModal, setShowEvidenceModal] = useState(false);
+
+  // Data dummy kasus penipuan
+  const [fraudCases, setFraudCases] = useState([
+    {
+      id: 1,
+      title: "Penipuan pembayaran COD",
+      description: "Pembeli tidak membayar saat barang diterima",
+      reporter: "seller_123",
+      reporterType: "seller",
+      reportedUser: "buyer_456",
+      severity: "high",
+      status: "open",
+      amount: 750000,
+      createdAt: "2023-06-05",
+      evidence: [
+        { type: "chat", content: "Percakapan WhatsApp pembeli janji bayar" },
+        { type: "image", content: "Bukti pengiriman barang" }
+      ]
+    },
+    {
+      id: 2,
+      title: "Akun palsu penjual",
+      description: "Akun menggunakan identitas dan foto KTP orang lain",
+      reporter: "buyer_789",
+      reporterType: "buyer",
+      reportedUser: "seller_scam",
+      severity: "critical",
+      status: "investigating",
+      amount: 0,
+      createdAt: "2023-06-03",
+      evidence: [
+        { type: "image", content: "Perbandingan foto KTP asli dan palsu" }
+      ]
+    },
+    {
+      id: 3,
+      title: "Pembatalan transaksi setelah barang dikirim",
+      description: "Pembeli membatalkan transaksi setelah barang dikirim",
+      reporter: "seller_101",
+      reporterType: "seller",
+      reportedUser: "buyer_202",
+      severity: "medium",
+      status: "resolved",
+      amount: 350000,
+      createdAt: "2023-05-28",
+      evidence: [
+        { type: "system", content: "Log transaksi sistem" }
+      ]
+    },
+    {
+      id: 4,
+      title: "Pengiriman barang palsu",
+      description: "Penjual mengirimkan barang tiruan bukan asli",
+      reporter: "buyer_303",
+      reporterType: "buyer",
+      reportedUser: "seller_fake",
+      severity: "high",
+      status: "closed",
+      amount: 1200000,
+      createdAt: "2023-05-25",
+      evidence: [
+        { type: "image", content: "Foto produk asli vs yang dikirim" },
+        { type: "video", content: "Unboxing produk palsu" }
+      ]
+    }
+  ]);
+
+  // Fungsi untuk mengubah status kasus
+  const updateCaseStatus = (id, newStatus) => {
+    setFraudCases(prev => prev.map(caseItem => 
+      caseItem.id === id ? {...caseItem, status: newStatus} : caseItem
+    ));
+  };
+
+  // Filter data berdasarkan kriteria
+  const filteredCases = fraudCases.filter(caseItem => {
+    const matchesStatus = filters.status === 'all' || caseItem.status === filters.status;
+    const matchesSeverity = filters.severity === 'all' || caseItem.severity === filters.severity;
+    const matchesSearch = caseItem.title.toLowerCase().includes(filters.search.toLowerCase()) || 
+                         caseItem.description.toLowerCase().includes(filters.search.toLowerCase());
+    const matchesReporter = filters.reporterType === 'all' || caseItem.reporterType === filters.reporterType;
+    
+    return matchesStatus && matchesSeverity && matchesSearch && matchesReporter;
+  });
+
+  // Fungsi untuk membuka modal bukti
+  const openEvidenceModal = (caseItem) => {
+    setSelectedCase(caseItem);
+    setShowEvidenceModal(true);
+  };
+
+  return (
+    <div className="p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Kasus Penipuan</h1>
+        <div className="text-sm text-gray-500">
+          Total: {filteredCases.length} kasus
+        </div>
+      </div>
+
+      <FraudFilterPanel filters={filters} setFilters={setFilters} />
+      
+      <div className="mt-6 bg-white rounded-xl shadow overflow-hidden">
+        <FraudCaseTable 
+          fraudCases={filteredCases} 
+          updateCaseStatus={updateCaseStatus}
+          openEvidenceModal={openEvidenceModal}
+        />
+      </div>
+      
+      {showEvidenceModal && selectedCase && (
+        <FraudEvidenceModal 
+          caseData={selectedCase} 
+          onClose={() => setShowEvidenceModal(false)} 
+        />
+      )}
+    </div>
+  );
 };
 
 export default FraudCases;
