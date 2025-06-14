@@ -58,7 +58,7 @@ const ProductDetail = () => {
     try {
       const token = localStorage.getItem('token');
       await axios.post(
-        `/favorite/${id}`,
+        `/favorites/${id}`,
         { isFavorite: !isFavorite },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -148,14 +148,6 @@ const ProductDetail = () => {
             className="w-full h-[400px] object-cover rounded-xl shadow-lg"
             onError={(e) => (e.target.src = defaultImage)}
           />
-          <button
-            className={`absolute top-4 right-4 p-2 rounded-full ${
-              isFavorite ? 'bg-red-500 text-white' : 'bg-white text-gray-600'
-            } hover:bg-red-600 hover:text-white transition-colors duration-200`}
-            onClick={handleToggleFavorite}
-          >
-            <FaHeart className="h-5 w-5" />
-          </button>
         </div>
 
         {/* Informasi Produk */}

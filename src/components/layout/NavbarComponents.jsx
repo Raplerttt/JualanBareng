@@ -18,6 +18,7 @@ const Navbar = () => {
   const [searchError, setSearchError] = useState(null);
   const [categories, setCategories] = useState([]);
   const [categoryError, setCategoryError] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
   const searchRef = useRef(null);
 
   // Handler untuk logout
@@ -39,6 +40,37 @@ const Navbar = () => {
       setIsMobileMenuOpen(false); // Tutup menu mobile
     }
   };
+
+  useEffect(() => {
+    const fetchCartData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!user || !token) {
+          setCartCount(0);
+          return;
+        }
+  
+        const response = await axios.get('/cart', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+  
+        if (response.data.success && response.data.data?.CartItems) {
+          const count = response.data.data.CartItems.reduce(
+            (sum, item) => sum + (item.quantity || 1), 
+            0
+          );
+          setCartCount(count);
+        } else {
+          setCartCount(0);
+        }
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+        setCartCount(0);
+      }
+    };
+  
+    fetchCartData();
+  }, [user]); // Refresh saat user berubah
 
   // Fetch kategori saat komponen dimuat
   useEffect(() => {
@@ -100,6 +132,7 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+  
 
   const defaultImage = "https://via.placeholder.com/150?text=Gambar+Produk";
 
@@ -154,9 +187,9 @@ const Navbar = () => {
                           key={category.id}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-indigo-600 transition-colors duration-150"
                           onClick={() => {
-                            console.log(`Kategori dipilih: ${category.name}`);
+                            console.log(`Kategori dipilih: ${category.name} (ID: ${category.id})`);
                             setIsCategoryDropdownOpen(false);
-                            navigate(`/category/${category.name.toLowerCase()}`);
+                            navigate(`/category/products/${category.id}`);
                           }}
                         >
                           {category.name}
@@ -253,7 +286,7 @@ const Navbar = () => {
               <FaShoppingCart className="h-5 w-5" />
               <span className="sr-only">Keranjang</span>
               <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                3
+              {cartCount}
               </span>
             </button>
 

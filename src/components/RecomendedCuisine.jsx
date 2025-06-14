@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaStar } from 'react-icons/fa';
 import axios from '../../utils/axios';
+import { useNavigate } from 'react-router-dom'; // Tambahkan ini
 
 const RecommendedCuisine = () => {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate(); // Tambahkan ini
 
   const container = {
     hidden: { opacity: 0 },
@@ -23,6 +25,30 @@ const RecommendedCuisine = () => {
     show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
+  // Fungsi untuk handle klik kategori
+  const handleCategoryClick = async (categoryId) => {
+    try {
+      setLoading(true);
+      const response = await axios.get('/product', {
+        params: { categoryId }
+      });
+      
+      // Navigasi dengan path dan state
+      navigate(`/category/products/${categoryId}`, { 
+        state: { 
+          products: response.data.data, 
+          categoryId 
+        } 
+      });
+      
+    } catch (err) {
+      setError(err.response?.data?.message || 'Gagal mengambil data produk');
+      toast.error('Gagal memuat produk kategori');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -30,7 +56,7 @@ const RecommendedCuisine = () => {
         const response = await axios.get('/categories', {
           params: { page: 1, limit: 4 },
         });
-        console.log('API Response:', response.data.data); // Debug API data
+        console.log('API Response:', response.data.data);
         const mappedCategories = response.data.data.map((category) => {
           if (!category.name) {
             console.warn('Category missing name:', category);
@@ -48,7 +74,7 @@ const RecommendedCuisine = () => {
         setCategories(mappedCategories);
         setLoading(false);
       } catch (err) {
-        setError(err.response?.data?.message || 'Gagal mengambil data kategori');
+        setError(err.response?.data?.message || 'Failed to fetch categories');
         setLoading(false);
       }
     };
@@ -91,7 +117,8 @@ const RecommendedCuisine = () => {
             key={category.id}
             variants={item}
             whileHover={{ y: -5 }}
-            className="group relative overflow-hidden rounded-xl shadow-lg bg-white"
+            className="group relative overflow-hidden rounded-xl shadow-lg bg-white cursor-pointer" // Tambahkan cursor-pointer
+            onClick={() => handleCategoryClick(category.id)} // Tambahkan onClick handler
           >
             <div className="relative h-64 overflow-hidden">
               <img

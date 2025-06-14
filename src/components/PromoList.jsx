@@ -37,11 +37,10 @@ const PromoList = () => {
   
         setPromos(vouchers);
         setLoading(false);
-  
-        // 2. Fetch claimed vouchers (only if user is logged in)
+
         if (token && userId) {
           try {
-            const claimedResponse = await axios.get(`/vouchers/claimed?userId=${userId}`, {
+            const claimedResponse = await axios.get(`/vouchers/claim?userId=${userId}`, {
               headers: {
                 Authorization: `Bearer ${token}`
               }

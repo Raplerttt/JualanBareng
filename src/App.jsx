@@ -17,6 +17,8 @@ import Loading from "./components/Loading";
 import { AuthProvider } from "./auth/authContext";
 import AdminLayout from "./admin/layout/AdminLayout";
 import ProductDetailPages from "./pages/ProductDetailPages";
+import CategoryProducts from "./pages/CategoryProduct";
+import OrderConfirmation from "./pages/OrderConfirmation";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
@@ -53,10 +55,12 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductDetailPages />} />
         <Route path="/chat" element={<ChatPages />} />
-        <Route path="/detail-order/:id" element={<DetailOrderPages />} />
+        <Route path="/checkout-order" element={<DetailOrderPages />} />
+        <Route path="/order-confirmation" element={<OrderConfirmation />} />
         <Route path="/detail-store/:id" element={<DetailStorePages />} />
         <Route path="/favorite" element={<FavoritePages />} />
         <Route path="/cart" element={<CartPages />} />
+        <Route path="/category/products/:categoryId" element={<CategoryProducts />} />
 
         {/* Nested Routes */}
         <Route path="/user/*" element={<UserRoutes />} />
