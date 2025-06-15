@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { FaHeart, FaCommentDots, FaShoppingCart, FaSearch, FaUser } from "react-icons/fa";
+import { FaHeart, FaCommentDots, FaShoppingCart, FaSearch, FaUser, FaClipboardList } from "react-icons/fa";
 import { HiOutlineMenu, HiX } from "react-icons/hi";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../../auth/authContext";
@@ -132,7 +132,6 @@ const Navbar = () => {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
 
   const defaultImage = "https://via.placeholder.com/150?text=Gambar+Produk";
 
@@ -265,30 +264,41 @@ const Navbar = () => {
 
           {/* Ikon Desktop */}
           <div className="hidden md:flex items-center space-x-6">
-            <button
-              className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              onClick={() => navigate("/favorite")}
-            >
-              <FaHeart className="h-5 w-5" />
-              <span className="sr-only">Favorit</span>
-            </button>
-            <button
-              className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              onClick={() => navigate("/chat")}
-            >
-              <FaCommentDots className="h-5 w-5" />
-              <span className="sr-only">Chat</span>
-            </button>
-            <button
-              className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
-              onClick={() => navigate("/cart")}
-            >
-              <FaShoppingCart className="h-5 w-5" />
-              <span className="sr-only">Keranjang</span>
-              <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              {cartCount}
-              </span>
-            </button>
+            {user && (
+              <>
+                <button
+                  className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => navigate("/favorite")}
+                >
+                  <FaHeart className="h-5 w-5" />
+                  <span className="sr-only">Favorit</span>
+                </button>
+                <button
+                  className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => navigate("/chat")}
+                >
+                  <FaCommentDots className="h-5 w-5" />
+                  <span className="sr-only">Chat</span>
+                </button>
+                <button
+                  className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => navigate("/cart")}
+                >
+                  <FaShoppingCart className="h-5 w-5" />
+                  <span className="sr-only">Keranjang</span>
+                  <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {cartCount}
+                  </span>
+                </button>
+                <button
+                  className="text-gray-600 hover:text-indigo-600 relative p-2 rounded-full hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => navigate("/orders")}
+                >
+                  <FaClipboardList className="h-5 w-5" />
+                  <span className="sr-only">Pesanan</span>
+                </button>
+              </>
+            )}
 
             {/* Profil Pengguna */}
             {user ? (
@@ -301,9 +311,9 @@ const Navbar = () => {
                     <img
                       className="h-8 w-8 rounded-full object-cover"
                       src={
-                        (user.photo
+                        user.photo
                           ? `http://localhost:3000/uploads/users/${user.photo}`
-                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}&background=3B82F6&color=FFFFFF`)
+                          : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}&background=3B82F6&color=FFFFFF`
                       }
                       alt="Profil pengguna"
                     />
@@ -360,7 +370,7 @@ const Navbar = () => {
           >
             <FaShoppingCart className="h-6 w-6" />
             <span className="absolute -top-1 -right-1 bg-indigo-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-              3
+              {cartCount}
             </span>
           </button>
         </div>
@@ -448,7 +458,7 @@ const Navbar = () => {
                       className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
                       onClick={() => {
                         console.log(`Kategori dipilih: ${category.name}`);
-                        navigate(`/category/${category.name.toLowerCase()}`);
+                        navigate(`/category/products/${category.id}`);
                         setIsMobileMenuOpen(false);
                       }}
                     >
@@ -461,24 +471,37 @@ const Navbar = () => {
 
             {/* Item Menu */}
             <div className="pt-2">
-              <button
-                onClick={() => {
-                  navigate("/favorite");
-                  setIsMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
-              >
-                Favorit
-              </button>
-              <button
-                onClick={() => {
-                  navigate("/chat");
-                  setIsMobileMenuOpen(false);
-                }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
-              >
-                Chat
-              </button>
+              {user && (
+                <>
+                  <button
+                    onClick={() => {
+                      navigate("/favorite");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                  >
+                    Favorit
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/chat");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                  >
+                    Chat
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigate("/orders");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-indigo-600 hover:bg-gray-50 rounded-md transition-colors duration-150"
+                  >
+                    Pesanan
+                  </button>
+                </>
+              )}
             </div>
 
             {/* Tombol Autentikasi */}
@@ -486,10 +509,14 @@ const Navbar = () => {
               {user ? (
                 <>
                   <div className="flex items-center px-3 py-2">
-                    {user.profilePicture ? (
+                    {user.photo ? (
                       <img
                         className="h-10 w-10 rounded-full object-cover mr-3"
-                        src={user.profilePicture}
+                        src={
+                          user.photo
+                            ? `http://localhost:3000/uploads/users/${user.photo}`
+                            : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "User")}&background=3B82F6&color=FFFFFF`
+                        }
                         alt="Profil pengguna"
                       />
                     ) : (
@@ -498,7 +525,7 @@ const Navbar = () => {
                       </div>
                     )}
                     <div>
-                      <p className="text-sm font-medium text-gray-800">{user.name || user.email}</p>
+                      <p className="text-sm font-medium text-gray-800">{user.fullName || user.email}</p>
                       <p className="text-xs text-gray-500">Lihat profil</p>
                     </div>
                   </div>

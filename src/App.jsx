@@ -19,6 +19,8 @@ import AdminLayout from "./admin/layout/AdminLayout";
 import ProductDetailPages from "./pages/ProductDetailPages";
 import CategoryProducts from "./pages/CategoryProduct";
 import OrderConfirmation from "./pages/OrderConfirmation";
+import OrdersPage from "./pages/OrderPages";
+import OrderDetailsPage from "./pages/OrdersDetailPage";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
@@ -34,7 +36,7 @@ function AppContent() {
   // Untuk menyisipkan Midtrans Snap Script
   useEffect(() => {
     const snapScript = "https://app.sandbox.midtrans.com/snap/snap.js";
-    const clientKey = "SB-Mid-client-S9-oAr-u4CcQxARM"; // Disarankan pakai process.env.REACT_APP_MIDTRANS_KEY
+    const clientKey = import.meta.env.REACT_APP_MIDTRANS_KEY// Disarankan pakai process.env.REACT_APP_MIDTRANS_KEY
 
     const script = document.createElement("script");
     script.src = snapScript;
@@ -55,6 +57,8 @@ function AppContent() {
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductDetailPages />} />
         <Route path="/chat" element={<ChatPages />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/order/:orderId" element={<OrderDetailsPage />} />
         <Route path="/checkout-order" element={<DetailOrderPages />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
         <Route path="/detail-store/:id" element={<DetailStorePages />} />

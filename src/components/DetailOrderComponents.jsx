@@ -1,7 +1,8 @@
+// pages/CheckoutConfirmation.jsx
 import React, { useState, useEffect, useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaCheckCircle, FaSpinner, FaHome, FaTruck, FaStickyNote, FaTimes } from 'react-icons/fa';
+import { FaCheckCircle, FaSpinner, FaHome, FaTruck, FaStickyNote, FaTimes, FaCreditCard } from 'react-icons/fa';
 import axios from '../../utils/axios';
 import { AuthContext } from '../auth/authContext';
 import toast from 'react-hot-toast';
@@ -16,16 +17,24 @@ const CheckoutConfirmation = () => {
     postalCode: '',
   });
   const [deliveryNotes, setDeliveryNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
   const [addressErrors, setAddressErrors] = useState({
     street: '',
     city: '',
     postalCode: '',
   });
+  const [paymentError, setPaymentError] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
 
-  // Extract data from location.state
+  const paymentMethods = [
+    { value: 'CASH', label: 'Bayar di Tempat (COD)' },
+    { value: 'BANK_CARD', label: 'Kartu Kredit/Debit' },
+    { value: 'BANK_TRANSFER', label: 'Transfer Bank' },
+    { value: 'E_WALLET', label: 'E-Wallet (GoPay, OVO, dll.)' },
+  ];
+
   const { selectedItems, voucher, discount, subtotal, total } = location.state || {};
 
   useEffect(() => {
@@ -45,7 +54,6 @@ const CheckoutConfirmation = () => {
       return;
     }
 
-    // Validasi semua item dari satu seller
     const sellerIds = new Set(selectedItems.map(item => item.Product.sellerId));
     if (sellerIds.size > 1) {
       toast.error('Semua item harus dari satu penjual');
@@ -55,7 +63,6 @@ const CheckoutConfirmation = () => {
       return;
     }
 
-    // Validasi data selectedItems
     for (const item of selectedItems) {
       if (!item.id || !item.quantity || !item.Product || !item.Product.id || !item.Product.price || !item.Product.sellerId) {
         toast.error('Data item tidak valid');
@@ -66,7 +73,6 @@ const CheckoutConfirmation = () => {
       }
     }
 
-    // Hitung ulang subtotal untuk validasi
     const calculatedSubtotal = selectedItems.reduce(
       (sum, item) => sum + item.quantity * item.Product.price,
       0
@@ -99,9 +105,15 @@ const CheckoutConfirmation = () => {
     return !errors.street && !errors.city && !errors.postalCode;
   };
 
+  const validatePaymentMethod = () => {
+    const isValid = !!paymentMethod;
+    setPaymentError(isValid ? '' : 'Pilih metode pembayaran');
+    return isValid;
+  };
+
   const handleConfirmOrder = async () => {
-    if (!validateAddress()) {
-      toast.error('Harap lengkapi dan periksa alamat pengiriman');
+    if (!validateAddress() || !validatePaymentMethod()) {
+      toast.error('Harap lengkapi alamat pengiriman dan pilih metode pembayaran');
       return;
     }
 
@@ -127,23 +139,88 @@ const CheckoutConfirmation = () => {
         })),
       };
 
-      console.log('Checkout payload:', JSON.stringify(payload, null, 2));
-
       const { data } = await axios.post('/orders/', payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('Respons POST /orders/:', JSON.stringify(data, null, 2));
-
-      // Validasi respons
       if (!data.data.id) {
         throw new Error('ID pesanan tidak ditemukan dalam respons');
       }
 
-      toast.success('Pesanan berhasil dibuat!');
-      navigate('/order-confirmation', {
-        state: { orderId: data.data.id, orderDetails: data.data },
-      });
+      // Panggil endpoint untuk membuat Snap token atau catat pembayaran
+      const paymentResponse = await axios.post(
+        `/payment/snap-token/${data.data.id}`,
+        { paymentMethod },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (paymentMethod === 'CASH') {
+        toast.success('Pesanan berhasil dibuat! Pembayaran akan dilakukan saat pengiriman.');
+        navigate('/order-confirmation', {
+          state: {
+            orderId: data.data.id,
+            orderDetails: data.data,
+            selectedItems,
+            paymentMethod,
+            paymentStatus: 'PENDING', // Status awal untuk CASH
+          },
+        });
+      } else {
+        if (!window.snap) {
+          throw new Error('Snap.js belum dimuat. Silakan refresh halaman.');
+        }
+        window.snap.pay(paymentResponse.data.token, {
+          onSuccess: result => {
+            toast.success('Pembayaran berhasil!');
+            navigate('/order-confirmation', {
+              state: {
+                orderId: data.data.id,
+                orderDetails: data.data,
+                selectedItems,
+                paymentMethod,
+                paymentStatus: 'SUCCESS',
+              },
+            });
+          },
+          onPending: result => {
+            toast('Pembayaran tertunda. Silakan selesaikan pembayaran.');
+            navigate('/order-confirmation', {
+              state: {
+                orderId: data.data.id,
+                orderDetails: data.data,
+                selectedItems,
+                paymentMethod,
+                paymentStatus: 'PENDING',
+              },
+            });
+          },
+          onError: result => {
+            toast.error('Pembayaran gagal. Silakan coba lagi.');
+            console.error('Payment error:', result);
+            navigate('/order-confirmation', {
+              state: {
+                orderId: data.data.id,
+                orderDetails: data.data,
+                selectedItems,
+                paymentMethod,
+                paymentStatus: 'FAILED',
+              },
+            });
+          },
+          onClose: () => {
+            toast.error('Popup pembayaran ditutup. Silakan selesaikan pembayaran.');
+            navigate('/order-confirmation', {
+              state: {
+                orderId: data.data.id,
+                orderDetails: data.data,
+                selectedItems,
+                paymentMethod,
+                paymentStatus: 'PENDING',
+              },
+            });
+          },
+        });
+      }
     } catch (err) {
       console.error('Gagal membuat pesanan:', err);
       const message =
@@ -161,7 +238,8 @@ const CheckoutConfirmation = () => {
     deliveryAddress.street.trim() &&
     deliveryAddress.city.trim() &&
     deliveryAddress.postalCode.trim() &&
-    /^\d{5}$/.test(deliveryAddress.postalCode.trim());
+    /^\d{5}$/.test(deliveryAddress.postalCode.trim()) &&
+    paymentMethod;
 
   if (loading) {
     return (
@@ -301,6 +379,38 @@ const CheckoutConfirmation = () => {
                   Tambahkan instruksi khusus untuk pengiriman, jika ada.
                 </p>
               </div>
+            </div>
+
+            {/* Payment Method */}
+            <div>
+              <h4 className="text-base font-medium text-gray-900 flex items-center mb-4">
+                <FaCreditCard className="mr-2 h-5 w-5 text-indigo-600" />
+                Metode Pembayaran
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {paymentMethods.map(method => (
+                  <div key={method.value} className="flex items-center">
+                    <input
+                      type="radio"
+                      id={method.value}
+                      name="paymentMethod"
+                      value={method.value}
+                      checked={paymentMethod === method.value}
+                      onChange={e => setPaymentMethod(e.target.value)}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                      aria-describedby={`paymentMethod-${method.value}-description`}
+                    />
+                    <label htmlFor={method.value} className="ml-3 block text-sm font-medium text-gray-700">
+                      {method.label}
+                    </label>
+                  </div>
+                ))}
+              </div>
+              {paymentError && (
+                <p id="paymentMethod-error" className="mt-2 text-sm text-red-600">
+                  {paymentError}
+                </p>
+              )}
             </div>
 
             {/* Order Items */}
