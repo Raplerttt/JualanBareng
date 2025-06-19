@@ -1,162 +1,193 @@
-import React, { useState, useEffect, useRef, useContext } from 'react';
-import { FaPaperclip, FaCamera, FaCheck, FaCheckDouble, FaStore, FaEllipsisV } from 'react-icons/fa';
-import { FiSend } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-import axios from '../../utils/axios';
-import toast from 'react-hot-toast';
-import { AuthContext } from '../auth/authContext';
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import { FaStore, FaEllipsisV, FaPaperclip, FaCamera, FaCheck, FaCheckDouble } from "react-icons/fa";
+import { FiSend } from "react-icons/fi";
 
-const ChatComponents = () => {
-  const { user } = useContext(AuthContext);
-  const [selectedSeller, setSelectedSeller] = useState(null);
-  const [message, setMessage] = useState('');
+const ChatSection = () => {
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [file, setFile] = useState(null);
   const [cameraImage, setCameraImage] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [sellers, setSellers] = useState([]);
-  const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [customers, setCustomers] = useState([]);
   const messageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Fetch all chats to get unique sellers, sorted by latest chat id
+  // Ambil sellerId dari localStorage dengan penanganan error
+  const getSellerId = () => {
+    try {
+      const sellerDataRaw = localStorage.getItem("SellerUser");
+      if (!sellerDataRaw) return null;
+      const sellerData = JSON.parse(sellerDataRaw);
+      return sellerData?.id || null;
+    } catch (err) {
+      console.error("Error parsing SellerUser:", err);
+      return null;
+    }
+  };
+
+  // Fetch daftar chat pelanggan
   useEffect(() => {
     const fetchChats = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token || !user) {
-          toast.error('Silakan login untuk melihat chat');
-          navigate('/user/login');
+        const token = localStorage.getItem("Sellertoken");
+        if (!token) {
+          toast.error("Silakan login untuk melihat chat");
           return;
         }
 
-        const response = await axios.get('/chats', {
+        const response = await axios.get("/chats", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         const chatData = response.data.data || [];
         chatData.sort((a, b) => a.id - b.id);
-        const sellerMap = new Map();
+
+        const customerMap = new Map();
         chatData.forEach((chat) => {
-          sellerMap.set(chat.sellerId, {
-            id: chat.sellerId,
-            name: chat.seller?.storeName || `Penjual ${chat.sellerId}`,
-            profilePic: chat.seller?.photo || 'https://randomuser.me/api/portraits/lego/1.jpg',
-            lastMessage: chat.message || '',
+          if (!chat.user || !chat.messages?.length) return;
+
+          customerMap.set(chat.id, {
+            id: chat.id,
+            userId: chat.userId,
+            name: chat.user?.fullName || `Customer ${chat.userId}`,
+            profilePic:
+              chat.user?.photo || "https://randomuser.me/api/portraits/lego/1.jpg",
+            lastMessage: chat.messages.at(-1)?.content || "",
             time: chat.createdAt
-              ? new Date(chat.createdAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
+              ? new Date(chat.createdAt).toLocaleTimeString("id-ID", {
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })
-              : '',
+              : "",
             chatId: chat.id,
             orderId: chat.orderId || null,
           });
         });
 
-        const uniqueSellers = Array.from(sellerMap.values()).sort((a, b) => a.chatId - b.chatId);
-        setSellers(uniqueSellers);
+        const uniqueCustomers = Array.from(customerMap.values()).sort(
+          (a, b) => b.chatId - a.chatId
+        );
+        setCustomers(uniqueCustomers);
       } catch (err) {
-        toast.error(err.response?.data?.message || 'Gagal memuat chat');
-        console.error('Gagal memuat chat:', err);
+        console.error("Error fetching chats:", err.response?.data || err.message);
+        toast.error(err.response?.data?.message || "Gagal memuat chat");
       }
     };
 
     fetchChats();
-  }, [navigate, user]);
+  }, []);
 
-  // Fetch messages for selected seller
-  const handleSellerSelect = async (seller) => {
-    setSelectedSeller(seller);
+  // Fetch pesan untuk pelanggan yang dipilih
+  const handleCustomerSelect = async (customer) => {
+    setSelectedCustomer(customer);
+
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`/chats?sellerId=${seller.id}`, {
+      const token = localStorage.getItem("Sellertoken");
+      if (!token) {
+        toast.error("Silakan login terlebih dahulu");
+        return;
+      }
+
+      const response = await axios.get(`/chats?chatId=${customer.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       const chatData = response.data.data || [];
       chatData.sort((a, b) => a.id - b.id);
+
       const chatMessages = chatData.flatMap((chat) =>
         (chat.messages || []).map((msg) => ({
-          // Gunakan senderType dari API untuk menentukan role
-          sender: msg.senderType === 'USER' ? 'User' : msg.senderType === 'SELLER' ? 'Seller' : 'Unknown',
+          sender: msg.senderId === customer.userId ? "User" : "Seller",
           text: msg.content,
-          status: 'read',
-          time: new Date(msg.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
+          status: "read",
+          time: new Date(msg.createdAt).toLocaleTimeString("id-ID", {
+            hour: "2-digit",
+            minute: "2-digit",
           }),
         }))
       );
+
       setMessages(chatMessages);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal memuat pesan');
-      console.error('Gagal memuat pesan:', err);
+      console.error("Error fetching messages:", err.response?.data || err.message);
+      toast.error(err.response?.data?.message || "Gagal memuat pesan");
     }
   };
 
+  // Kirim pesan baru
   const handleSendMessage = async () => {
     if (!message.trim() && !file && !cameraImage) return;
 
     const newMessage = {
-      sender: 'User',
+      sender: "Seller",
       text: message,
       file,
       cameraImage,
-      status: 'sent',
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: "sent",
+      time: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("Sellertoken");
+      const sellerId = getSellerId();
+
+      if (!token || !sellerId) {
+        toast.error("Token atau seller ID tidak ditemukan. Harap login ulang.");
+        return;
+      }
 
       const response = await axios.post(
-        '/messages',
+        "/messages",
         {
-          chatId: selectedSeller.chatId,
-          senderId: user.id, // User yang login
-          senderType: 'USER', // Role user
-          content: message.trim() || 'Lampiran',
+          chatId: selectedCustomer.chatId,
+          senderId: sellerId,
+          senderType: "SELLER",
+          content: message.trim() || "Lampiran",
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const newChatMessage = response.data.data;
+      const newChat = response.data.data;
 
-      setMessages([...messages, newMessage]);
-      setMessage('');
+      setMessages((prev) => [...prev, newMessage]);
+      setMessage("");
       setFile(null);
       setCameraImage(null);
 
-      // Update seller list
-      setSellers((prev) => {
-        const updatedSellers = prev.filter((s) => s.id !== selectedSeller.id);
+      // Update daftar pelanggan
+      setCustomers((prev) => {
+        const updated = prev.filter((c) => c.id !== selectedCustomer.id);
         return [
-          ...updatedSellers,
+          ...updated,
           {
-            ...selectedSeller,
-            lastMessage: message.trim() || 'Lampiran',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            chatId: newChatMessage.chatId || selectedSeller.chatId,
+            ...selectedCustomer,
+            lastMessage: message.trim() || "Lampiran",
+            time: new Date().toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            chatId: newChat?.chatId || selectedCustomer.chatId,
           },
-        ];
+        ].sort((a, b) => b.chatId - a.chatId);
       });
 
-      // Simulate seller response
+      // Simulasi pesan terbaca
       setTimeout(() => {
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: 'Seller', // Role Seller untuk simulasi
-            text: 'Pesan diterima, terima kasih!',
-            status: 'read',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          },
-        ]);
+        setMessages((prev) =>
+          prev.map((msg, i) =>
+            i === prev.length - 1 ? { ...msg, status: "read" } : msg
+          )
+        );
       }, 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Gagal mengirim pesan');
-      console.error('Gagal mengirim pesan:', err);
+      toast.error(err.response?.data?.message || "Gagal mengirim pesan");
+      console.error("Gagal mengirim pesan:", err);
     }
   };
 
@@ -168,41 +199,46 @@ const ChatComponents = () => {
     setCameraImage(imageSrc);
   };
 
-  const goToDetailStore = (sellerId) => {
-    navigate(`/detail-store/${sellerId}`);
+  const goToDetailOrder = (orderId) => {
+    console.log("Navigate to order:", orderId);
+    // Implementasi navigasi ke detail pesanan jika diperlukan
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
+  // Auto-scroll ke bawah saat pesan berubah
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // Fokus input saat pelanggan dipilih
   useEffect(() => {
-    if (selectedSeller && messageInputRef.current) {
+    if (selectedCustomer && messageInputRef.current) {
       messageInputRef.current.focus();
     }
-  }, [selectedSeller]);
+  }, [selectedCustomer]);
 
-  const filteredSellers = sellers.filter((seller) =>
-    (seller.name || '').toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCustomers = customers.filter((customer) =>
+    (customer.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-[calc(100vh-100px)] bg-gray-50">
       {/* Sidebar */}
       <div className="w-full md:w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="p-4 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-800">Pesan</h2>
+          <h2 className="text-xl font-semibold text-gray-800">
+            Pesan Pelanggan
+          </h2>
           <div className="mt-3 relative">
             <input
               type="text"
-              placeholder="Cari penjual..."
+              placeholder="Cari pelanggan..."
               className="w-full p-2 pl-8 rounded-lg bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -225,28 +261,36 @@ const ChatComponents = () => {
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {filteredSellers.length === 0 ? (
-            <div className="p-4 text-center text-gray-500">Tidak ada chat ditemukan</div>
+          {filteredCustomers.length === 0 ? (
+            <div className="p-4 text-center text-gray-500">
+              Tidak ada chat ditemukan
+            </div>
           ) : (
-            filteredSellers.map((seller) => (
+            filteredCustomers.map((customer) => (
               <div
-                key={seller.id}
+                key={customer.id}
                 className={`flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                  selectedSeller?.id === seller.id ? 'bg-green-50' : ''
+                  selectedCustomer?.id === customer.id ? "bg-green-50" : ""
                 }`}
-                onClick={() => handleSellerSelect(seller)}
+                onClick={() => handleCustomerSelect(customer)}
               >
                 <img
-                  src={seller.profilePic}
-                  alt={seller.name}
+                  src={customer.profilePic}
+                  alt={customer.name}
                   className="w-12 h-12 rounded-full object-cover mr-3"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-sm font-medium text-gray-900 truncate">{seller.name}</h3>
-                    <span className="text-xs text-gray-500">{seller.time}</span>
+                    <h3 className="text-sm font-medium text-gray-900 truncate">
+                      {customer.name}
+                    </h3>
+                    <span className="text-xs text-gray-500">
+                      {customer.time}
+                    </span>
                   </div>
-                  <p className="text-sm text-gray-500 truncate">{seller.lastMessage}</p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {customer.lastMessage}
+                  </p>
                 </div>
               </div>
             ))
@@ -256,26 +300,28 @@ const ChatComponents = () => {
 
       {/* Chat Area */}
       <div className="flex-1 flex flex-col">
-        {selectedSeller ? (
+        {selectedCustomer ? (
           <>
             {/* Chat Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
               <div className="flex items-center">
                 <img
-                  src={selectedSeller.profilePic}
-                  alt={selectedSeller.name}
+                  src={selectedCustomer.profilePic}
+                  alt={selectedCustomer.name}
                   className="w-10 h-10 rounded-full mr-3"
                 />
                 <div>
-                  <h3 className="font-medium text-gray-900">{selectedSeller.name}</h3>
+                  <h3 className="font-medium text-gray-900">
+                    {selectedCustomer.name}
+                  </h3>
                   <p className="text-xs text-gray-500">Online</p>
                 </div>
               </div>
               <div className="flex space-x-4">
                 <button
-                  onClick={() => goToDetailStore(selectedSeller.id)}
+                  onClick={() => goToDetailOrder(selectedCustomer.orderId)}
                   className="text-gray-600 hover:text-green-600 transition-colors"
-                  title="Kunjungi toko"
+                  title="Lihat pesanan"
                 >
                   <FaStore size={18} />
                 </button>
@@ -291,13 +337,15 @@ const ChatComponents = () => {
                 {messages.map((msg, index) => (
                   <div
                     key={index}
-                    className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${
+                      msg.sender === "Seller" ? "justify-end" : "justify-start"
+                    }`}
                   >
                     <div
-                      className={`relative max-w-xs lige:max-w-md px-4 py-2 rounded-lg ${
-                        msg.sender === 'User'
-                          ? 'bg-green-500 text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 rounded-tl-none shadow-sm'
+                      className={`relative max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                        msg.sender === "Seller"
+                          ? "bg-green-500 text-white rounded-tr-none"
+                          : "bg-white text-gray-800 rounded-tl-none shadow-sm"
                       }`}
                     >
                       {msg.text}
@@ -320,12 +368,16 @@ const ChatComponents = () => {
                           </a>
                         </div>
                       )}
-                      <div className="fle items-center justify-end mt-1 space-x-1">
+                      <div className="flex items-center justify-end mt-1 space-x-1">
                         <span className="text-xs opacity-70">{msg.time}</span>
-                        {msg.sender === 'User' && (
+                        {msg.sender === "Seller" && (
                           <span className="ml-1">
-                            {msg.status === 'sent' && <FaCheck className="text-xs" />}
-                            {msg.status === 'read' && <FaCheckDouble className="text-xs text-blue-300" />}
+                            {msg.status === "sent" && (
+                              <FaCheck className="text-xs" />
+                            )}
+                            {msg.status === "read" && (
+                              <FaCheckDouble className="text-xs text-blue-300" />
+                            )}
                           </span>
                         )}
                       </div>
@@ -352,7 +404,9 @@ const ChatComponents = () => {
                     type="file"
                     accept="image/*"
                     capture="camera"
-                    onChange={(e) => handleCameraChange(URL.createObjectURL(e.target.files[0]))}
+                    onChange={(e) =>
+                      handleCameraChange(URL.createObjectURL(e.target.files[0]))
+                    }
                     className="hidden"
                   />
                   <FaCamera size={20} />
@@ -372,8 +426,8 @@ const ChatComponents = () => {
                     disabled={!message.trim() && !file && !cameraImage}
                     className={`absolute right-2 top-1/2 transform -translate-y-1/2 p-2 rounded-full ${
                       message.trim() || file || cameraImage
-                        ? 'bg-green-500 text-white hover:bg-green-600'
-                        : 'text-gray-400'
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "text-gray-400"
                     } transition-colors`}
                   >
                     <FiSend size={18} />
@@ -399,9 +453,12 @@ const ChatComponents = () => {
                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
-              <h3 className="mt-4 text-lg font-medium text-gray-900">Tidak ada percakapan dipilih</h3>
+              <h3 className="mt-4 text-lg font-medium text-gray-900">
+                Tidak ada percakapan dipilih
+              </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Pilih penjual dari sidebar untuk mulai mengobrol atau cari penjual menggunakan kolom pencarian.
+                Pilih pelanggan dari sidebar untuk mulai mengobrol atau cari
+                pelanggan menggunakan kolom pencarian.
               </p>
             </div>
           </div>
@@ -411,4 +468,4 @@ const ChatComponents = () => {
   );
 };
 
-export default ChatComponents;
+export default ChatSection;

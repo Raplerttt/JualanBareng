@@ -15,12 +15,13 @@ import SellerRoutes from "./seller/RouteSeller";
 import UseLoading from "./hooks/UseLoading";
 import Loading from "./components/Loading";
 import { AuthProvider } from "./auth/authContext";
-import AdminLayout from "./admin/layout/AdminLayout";
 import ProductDetailPages from "./pages/ProductDetailPages";
 import CategoryProducts from "./pages/CategoryProduct";
 import OrderConfirmation from "./pages/OrderConfirmation";
 import OrdersPage from "./pages/OrderPages";
 import OrderDetailsPage from "./pages/OrdersDetailPage";
+import Login from './admin/Login'
+import AdminLayout from "./admin/layout/AdminLayout";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
@@ -54,6 +55,7 @@ function AppContent() {
     <div>
       {isLoading && <Loading />}
       <Routes>
+        <Route path="/login" element={<Login/>} />
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductDetailPages />} />
         <Route path="/chat" element={<ChatPages />} />
@@ -61,7 +63,7 @@ function AppContent() {
         <Route path="/order/:orderId" element={<OrderDetailsPage />} />
         <Route path="/checkout-order" element={<DetailOrderPages />} />
         <Route path="/order-confirmation" element={<OrderConfirmation />} />
-        <Route path="/detail-store/:id" element={<DetailStorePages />} />
+        <Route path="/detail-store/:sellerId" element={<DetailStorePages />} />
         <Route path="/favorite" element={<FavoritePages />} />
         <Route path="/cart" element={<CartPages />} />
         <Route path="/category/products/:categoryId" element={<CategoryProducts />} />

@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { FaClipboardList, FaCreditCard } from "react-icons/fa";
 import toast from "react-hot-toast";
+import Navbar from "../components/layout/NavbarComponents"
+import Footer from "../components/layout/FooterComponents"
 
 const OrderDetailsPage = () => {
   const { state } = useLocation();
@@ -19,6 +21,8 @@ const OrderDetailsPage = () => {
   if (!orderId || !orderDetails) {
     toast.error("Data pesanan tidak valid.");
     return (
+      <>
+      <Navbar />
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center bg-gray-100">
         <p className="text-red-600 text-lg">Tidak ada data pesanan ditemukan.</p>
         <button
@@ -28,6 +32,8 @@ const OrderDetailsPage = () => {
           Kembali ke Pesanan
         </button>
       </div>
+      <Footer />
+      </>
     );
   }
 
@@ -42,6 +48,8 @@ const OrderDetailsPage = () => {
     : {};
 
   return (
+    <>
+    <Navbar />
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         <motion.div
@@ -107,6 +115,8 @@ const OrderDetailsPage = () => {
         </motion.div>
       </div>
     </div>
+    <Footer />
+    </>
   );
 };
 

@@ -6,7 +6,7 @@ import classNames from 'classnames';
 import axios from '../../utils/axios';
 import toast from 'react-hot-toast';
 
-const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
+const ProductCard = ({ product, isFavorite, onFavoriteToggle, averageRating }) => {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -85,17 +85,17 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
         </div>
         
         <div className="mt-auto flex justify-between items-center">
-          <div className="flex items-center" title={`Rating: ${product.rating}`}>
+          <div className="flex items-center" title={`Rating: ${averageRating.toFixed(1)}`}>
             {Array.from({ length: 5 }, (_, index) => (
               <FaStar
                 key={index}
                 className={classNames('text-sm', {
-                  'text-yellow-500': index < Math.floor(product.rating),
-                  'text-gray-300': index >= Math.floor(product.rating),
+                  'text-yellow-500': index < Math.floor(averageRating),
+                  'text-gray-300': index >= Math.floor(averageRating),
                 })}
               />
             ))}
-            <span className="text-xs text-gray-500 ml-1">({product.rating})</span>
+            <span className="text-xs text-gray-500 ml-1">({averageRating.toFixed(1)})</span>
           </div>
         </div>
       </div>
@@ -106,8 +106,33 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle }) => {
 const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
   const [favorites, setFavorites] = useState({});
   const [products, setProducts] = useState([]);
+  const [averageRatings, setAverageRatings] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const fetchAverageRating = async (productId) => {
+    try {
+      const token = localStorage.getItem("token");
+  
+      const response = await axios.get("/feedbacks", {
+        params: { productId },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const feedbacks = response.data.data || [];
+  
+      if (feedbacks.length === 0) return 0;
+  
+      const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+      return totalRating / feedbacks.length;
+    } catch (err) {
+      console.error(`Failed to fetch feedback for product ${productId}:`, err);
+      return 0;
+    }
+  };
+  
 
   const handleFavoriteToggle = async (id, isCurrentlyFavorite) => {
     if (!Number.isInteger(id) || id <= 0) {
@@ -144,12 +169,21 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
   };
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchProductsAndRatings = async () => {
       try {
         const token = localStorage.getItem('token');
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
         const response = await axios.get('/product', config);
-        setProducts(response.data.data);
+        const productsData = response.data.data;
+
+        // Fetch average ratings for each product
+        const ratings = {};
+        for (const product of productsData) {
+          const avgRating = await fetchAverageRating(product.id);
+          ratings[product.id] = avgRating;
+        }
+        setAverageRatings(ratings);
+        setProducts(productsData);
 
         // Fetch initial favorite status if logged in
         if (token) {
@@ -167,7 +201,7 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
       }
     };
 
-    fetchProducts();
+    fetchProductsAndRatings();
   }, []);
 
   return (
@@ -213,6 +247,7 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
                 product={product}
                 isFavorite={favorites[product.id]}
                 onFavoriteToggle={handleFavoriteToggle}
+                averageRating={averageRatings[product.id] || 0}
               />
             ))}
           </AnimatePresence>

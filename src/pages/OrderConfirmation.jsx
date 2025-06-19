@@ -113,7 +113,8 @@ const OrderConfirmation = () => {
     switch (normalizedStatus) {
       case 'SUCCESS':
       case 'SETTLEMENT':
-      case 'CAPTURE':
+      case 'DIPROSES':
+      case 'COMPLETED':
         return {
           icon: <FaCheckCircle className="mx-auto h-12 w-12 text-green-600" />,
           title: 'Pembayaran Berhasil!',

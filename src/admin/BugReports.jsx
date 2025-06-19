@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import BugReportTable from './components/BugReportTabel';
 import BugFilterPanel from './components/BugFilterPanel';
 
@@ -9,84 +10,70 @@ const BugReports = () => {
     search: ''
   });
 
-  // Data dummy (nantinya akan diganti dengan data dari API)
-  const [bugReports, setBugReports] = useState([
-    {
-      id: 1,
-      title: "Pembayaran gagal setelah OTP",
-      description: "User mengalami gagal bayar setelah memasukkan OTP yang benar",
-      reporter: "seller_123",
-      priority: "high",
-      status: "open",
-      createdAt: "2023-06-01",
-      assignedTo: "Dev Team A"
-    },
-    {
-      id: 2,
-      title: "Gambar produk tidak muncul",
-      description: "Gambar produk hilang setelah refresh halaman",
-      reporter: "buyer_456",
-      priority: "medium",
-      status: "in_progress",
-      createdAt: "2023-06-03",
-      assignedTo: "Dev Team B"
-    },
-    {
-      id: 3,
-      title: "Notifikasi tidak terkirim",
-      description: "User tidak menerima notifikasi order baru",
-      reporter: "seller_789",
-      priority: "high",
-      status: "resolved",
-      createdAt: "2023-05-28",
-      assignedTo: "Dev Team C"
-    },
-    {
-      id: 4,
-      title: "Error checkout",
-      description: "Tombol checkout tidak responsif di browser Safari",
-      reporter: "buyer_101",
-      priority: "critical",
-      status: "open",
-      createdAt: "2023-06-05",
-      assignedTo: "Dev Team A"
-    }
-  ]);
+  const [bugReports, setBugReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Fungsi untuk mengubah status bug
-  const updateBugStatus = (id, newStatus) => {
-    setBugReports(prev => prev.map(bug => 
-      bug.id === id ? {...bug, status: newStatus} : bug
-    ));
+  const API_URL = 'http://localhost:3000/api';
+
+  useEffect(() => {
+    const fetchBugReports = async () => {
+      try {
+        const token = localStorage.getItem('Admintoken');
+        const headers = { Authorization: `Bearer ${token}` };
+
+        const response = await axios.get(`${API_URL}/reports?reportType=BUG`, { headers });
+
+        setBugReports(response.data.data);
+        setLoading(false);
+      } catch (err) {
+        setError('Gagal memuat data bug');
+        setLoading(false);
+      }
+    };
+
+    fetchBugReports();
+  }, []);
+
+  const updateBugStatus = async (id, newStatus) => {
+    try {
+      const token = localStorage.getItem('Admintoken');
+      const headers = { Authorization: `Bearer ${token}` };
+
+      await axios.put(`${API_URL}/reports/${id}`, { status: newStatus }, { headers });
+
+      setBugReports(prev =>
+        prev.map(bug =>
+          bug.id === id ? { ...bug, status: newStatus } : bug
+        )
+      );
+    } catch (err) {
+      console.error('Gagal mengupdate status bug:', err);
+    }
   };
 
-  // Filter data berdasarkan kriteria
+  const search = (filters.search || '').toLowerCase();
+
   const filteredBugs = bugReports.filter(bug => {
     const matchesStatus = filters.status === 'all' || bug.status === filters.status;
     const matchesPriority = filters.priority === 'all' || bug.priority === filters.priority;
-    const matchesSearch = bug.title.toLowerCase().includes(filters.search.toLowerCase()) || 
-                         bug.description.toLowerCase().includes(filters.search.toLowerCase());
-    
+    const matchesSearch =
+      (bug.title?.toLowerCase() || '').includes(search) ||
+      (bug.description?.toLowerCase() || '').includes(search);
+
     return matchesStatus && matchesPriority && matchesSearch;
   });
 
+  if (loading) return <div className="p-6">Memuat laporan bug...</div>;
+  if (error) return <div className="p-6 text-red-500">{error}</div>;
+
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Laporan Bug</h1>
-        <div className="text-sm text-gray-500">
-          Total: {filteredBugs.length} laporan
-        </div>
-      </div>
+      <h1 className="text-3xl font-bold mb-4">Laporan Bug</h1>
 
       <BugFilterPanel filters={filters} setFilters={setFilters} />
-      
-      <div className="mt-6 bg-white rounded-xl shadow overflow-hidden">
-        <BugReportTable 
-          bugReports={filteredBugs} 
-          updateBugStatus={updateBugStatus} 
-        />
-      </div>
+
+      <BugReportTable bugReports={filteredBugs} updateBugStatus={updateBugStatus} />
     </div>
   );
 };

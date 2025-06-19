@@ -65,7 +65,7 @@ const AuthFormSellerLogin = ({ buttonText = "Login" }) => {
   
         // Simpan ke localStorage
         localStorage.setItem("Sellertoken", token);
-        localStorage.setItem("user", JSON.stringify(data));
+        localStorage.setItem("SellerUser", JSON.stringify(data)); // ✅ SIMPAN dengan key yang sesuai
         localStorage.setItem("role", data.role);
         localStorage.setItem("refreshToken", data.refreshToken);
   

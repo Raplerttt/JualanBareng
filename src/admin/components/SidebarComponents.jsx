@@ -5,8 +5,6 @@ const Sidebar = () => {
   const navItems = [
     { path: '/admin', icon: '📊', label: 'Dashboard' },
     { path: '/admin/bug-reports', icon: '🐛', label: 'Laporan Bug' },
-    { path: '/admin/fraud-cases', icon: '🕵️', label: 'Kasus Penipuan' },
-    { path: '/admin/analytics', icon: '📈', label: 'Analitik Sistem' },
     { path: '/admin/settings', icon: '⚙️', label: 'Pengaturan' },
   ];
 

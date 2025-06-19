@@ -11,8 +11,6 @@ const DetailStorePages = () => {
         <Main>
           <Navbar />
           <DetailStoreComponents />
-          <ProductRecommendation categoryName="Recomended in Store"  />
-          <ProductRecommendation categoryName="Category Spicy"  />
         </Main>
           <Footer />
         </>
