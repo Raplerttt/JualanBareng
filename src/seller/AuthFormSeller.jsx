@@ -145,7 +145,7 @@ const AuthFormSellerLogin = ({ buttonText = "Login" }) => {
       </form>
 
       <div className="mt-4 text-center">
-        <Link to="/seller/forgot-password" className="text-blue-500 hover:underline">
+        <Link to="/forgot-password" className="text-blue-500 hover:underline">
           Lupa Password?
         </Link>
       </div>

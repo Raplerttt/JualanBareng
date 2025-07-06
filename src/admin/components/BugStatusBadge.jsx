@@ -1,16 +1,16 @@
 import React from 'react';
 
-const FraudStatusBadge = ({ status }) => {
+const BugStatusBadge = ({ status }) => {
   const statusStyles = {
     open: 'bg-red-100 text-red-800',
-    investigating: 'bg-yellow-100 text-yellow-800',
+    in_progress: 'bg-yellow-100 text-yellow-800',
     resolved: 'bg-green-100 text-green-800',
     closed: 'bg-gray-100 text-gray-800'
   };
 
   const statusLabels = {
     open: 'Open',
-    investigating: 'Investigating',
+    in_progress: 'In Progress',
     resolved: 'Resolved',
     closed: 'Closed'
   };
@@ -22,4 +22,4 @@ const FraudStatusBadge = ({ status }) => {
   );
 };
 
-export default FraudStatusBadge;
+export default BugStatusBadge;

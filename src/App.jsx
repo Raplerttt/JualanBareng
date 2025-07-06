@@ -22,6 +22,8 @@ import OrdersPage from "./pages/OrderPages";
 import OrderDetailsPage from "./pages/OrdersDetailPage";
 import Login from './admin/Login'
 import AdminLayout from "./admin/layout/AdminLayout";
+import ForgotPassword from "./pages/ForgotPasswordPage";
+import ResetPassword from "./pages/ResetPassword";
 
 function AppContent() {
   const { isLoading, startLoading, stopLoading } = UseLoading();
@@ -56,9 +58,12 @@ function AppContent() {
       {isLoading && <Loading />}
       <Routes>
         <Route path="/login" element={<Login/>} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/" element={<HomePage />} />
         <Route path="/product/:id" element={<ProductDetailPages />} />
         <Route path="/chat" element={<ChatPages />} />
+        <Route path="/chat/:sellerId" element={<ChatPages />} />
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/order/:orderId" element={<OrderDetailsPage />} />
         <Route path="/checkout-order" element={<DetailOrderPages />} />

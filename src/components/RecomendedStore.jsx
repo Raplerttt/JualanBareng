@@ -18,7 +18,7 @@ const StoreCard = ({ store, index }) => {
       <a href={`/detail-store/${store.id}`} className="w-full flex flex-col items-center">
         <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-700 flex justify-center items-center rounded-full overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-500 group-hover:scale-105">
           <img
-            src={store.image}
+            src={`http://localhost:3000/${store.image}`}
             alt={store.name}
             className="w-3/4 h-3/4 object-contain rounded-full transition-all duration-500 group-hover:scale-110"
             onError={(e) => {
@@ -44,19 +44,27 @@ const RecommendedStore = () => {
     let isMounted = true;
     const fetchRecommendedStores = async () => {
       try {
-        const response = await axios.get('/recommended-stores');
+        let response = await axios.get('/recommended-stores');
+        let data = response.data.data;
+  
+        // Fallback jika kosong, ambil semua seller
+        if (!data || data.length === 0) {
+          response = await axios.get('/seller'); // pastikan endpoint ini tersedia
+          data = response.data.data;
+        }
+  
         if (!isMounted) return;
-
-        const mappedStores = response.data.data.map((store) => ({
+  
+        const mappedStores = data.map((store) => ({
           id: store.id,
-          name: store.name,
-          image: store.image || `https://via.placeholder.com/150?text=${encodeURIComponent(store.name)}`,
+          name: store.name || store.storeName || 'Unknown',
+          image: store.image || `https://via.placeholder.com/150?text=${encodeURIComponent(store.name || store.storeName || 'Store')}`,
         }));
-
+  
         setStores(mappedStores);
       } catch (err) {
         if (isMounted) {
-          setError(err.response?.data?.message || 'Gagal mengambil data toko rekomendasi');
+          setError(err.response?.data?.message || 'Gagal mengambil data toko');
         }
       } finally {
         if (isMounted) {
@@ -64,13 +72,14 @@ const RecommendedStore = () => {
         }
       }
     };
-
+  
     fetchRecommendedStores();
-
+  
     return () => {
       isMounted = false;
     };
   }, []);
+  
 
   if (loading) {
     return (

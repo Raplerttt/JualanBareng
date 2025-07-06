@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { jsPDF } from 'jspdf';
 import StatCard from './components/StatCard';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -43,7 +44,7 @@ const Dashboard = () => {
         setStats(statsRes.data);
         setTrafficData(trafficRes.data);
         setIncidents(incidentsRes.data);
-        setReports(reportsRes.data.data); // asumsi response = { success, data: [...] }
+        setReports(reportsRes.data.data);
         setLoading(false);
       } catch (err) {
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -61,7 +62,35 @@ const Dashboard = () => {
     fetchData();
   }, []);
 
-  // Chart config
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const revenueStat = stats.find(
+      (stat) => stat.title.toLowerCase().includes('revenue') || stat.title.toLowerCase().includes('pendapatan')
+    ) || {};
+
+    // Header
+    doc.setFontSize(16);
+    doc.text('Revenue Statistics Report', 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, 20, 30);
+
+    // Revenue Statistics
+    doc.text('Revenue Statistics', 20, 50);
+    doc.text(`Metric: ${revenueStat.title || 'Revenue'}`, 20, 60);
+    doc.text(`Value: ${revenueStat.value || 'N/A'}`, 20, 70);
+    doc.text(`Change: ${revenueStat.change || 'N/A'}`, 20, 80);
+
+    // Traffic Data
+    doc.text('Traffic Data (Last 30 Days)', 20, 100);
+    let y = 110;
+    trafficData.forEach((d) => {
+      doc.text(`${d.date}: ${d.orders} orders`, 20, y);
+      y += 10;
+    });
+
+    doc.save('revenue_report.pdf');
+  };
+
   const chartData = {
     labels: trafficData.map((d) => d.date),
     datasets: [
@@ -93,7 +122,6 @@ const Dashboard = () => {
     },
   };
 
-  // Gabungkan incident + laporan BUG
   const criticalIncidents = [
     ...incidents,
     ...reports
@@ -110,16 +138,22 @@ const Dashboard = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <button
+          onClick={handleExportPDF}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          Export Revenue Report (PDF)
+        </button>
+      </div>
 
-      {/* Statistik */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat, i) => (
           <StatCard key={i} title={stat.title} value={stat.value} change={stat.change} />
         ))}
       </div>
 
-      {/* Grafik & Insiden */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl shadow p-6 lg:col-span-2">
           <h2 className="text-xl font-semibold mb-4">Traffic 30 Hari Terakhir</h2>

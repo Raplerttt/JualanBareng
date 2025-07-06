@@ -83,17 +83,17 @@ const AuthFormRegister = ({ buttonText = "Register" }) => {
 
   return (
     <div className="w-full p-8">
-      <h2 className="text-2xl font-bold text-white mb-6 text-center">Register as a User</h2>
+      <h2 className="text-2xl font-bold text-black mb-6 text-center">Register Sebagai User</h2>
       {error.general && <p className="text-red-500 text-sm mb-4">{error.general}</p>}
       <form className="space-y-4" onSubmit={handleSubmit}>
-        <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleChange} error={error.fullName} />
+        <InputField label="Nama Lengkap" name="fullName" value={formData.fullName} onChange={handleChange} error={error.fullName} />
         <InputField label="Email" name="email" value={formData.email} onChange={handleChange} error={error.email} />
-        <InputField label="Phone Number" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} error={error.phoneNumber} />
+        <InputField label="Nomer Handphone" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} error={error.phoneNumber} />
         <PasswordField label="Password" name="password" value={formData.password} onChange={handleChange} showPassword={showPassword} togglePasswordVisibility={togglePasswordVisibility} error={error.password} />
-        <PasswordField label="Confirm Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} showPassword={showPassword} togglePasswordVisibility={togglePasswordVisibility} error={error.confirmPassword} />
+        <PasswordField label="Konfirmasi Password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} showPassword={showPassword} togglePasswordVisibility={togglePasswordVisibility} error={error.confirmPassword} />
         <div className="flex items-center justify-between">
-          <div className="text-sm text-white">
-            Already have an account? <a href="/user/login" className="text-blue-500 hover:underline">Login</a>
+          <div className="text-sm text-black">
+            Sudah Mempunyai Akun? <a href="/user/login" className="text-blue-500 hover:underline">Masuk</a>
           </div>
           <button type="submit" className="px-6 py-2 rounded-lg text-white font-medium bg-gradient-to-r from-blue-700 to-blue-500">
             {buttonText}
@@ -106,7 +106,7 @@ const AuthFormRegister = ({ buttonText = "Register" }) => {
 
 const InputField = ({ label, name, value, onChange, error }) => (
   <div>
-    <label className="block text-white">{label}</label>
+    <label className="block text-black">{label}</label>
     <input type="text" name={name} value={value} onChange={onChange} className="w-full px-4 py-2 border rounded-lg focus:ring-green-300" />
     {error && <p className="text-red-500 text-sm">{error}</p>}
   </div>
@@ -114,7 +114,7 @@ const InputField = ({ label, name, value, onChange, error }) => (
 
 const PasswordField = ({ label, name, value, onChange, showPassword, togglePasswordVisibility, error }) => (
   <div>
-    <label className="block text-white">{label}</label>
+    <label className="block text-black">{label}</label>
     <div className="relative">
       <input type={showPassword ? "text" : "password"} name={name} value={value} onChange={onChange} className="w-full px-4 py-2 border rounded-lg focus:ring-green-300" />
       <button type="button" onClick={togglePasswordVisibility} className="absolute inset-y-0 right-0 px-3 flex items-center text-sm">

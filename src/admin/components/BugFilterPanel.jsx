@@ -21,7 +21,7 @@ const BugFilterPanel = ({ filters, setFilters }) => {
               name="search"
               value={filters.search}
               onChange={handleChange}
-              placeholder="Cari laporan bug..."
+              placeholder="Cari laporan..."
               className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>

@@ -48,7 +48,7 @@ const BugReportTable = ({ bugReports, updateBugStatus }) => {
               onClick={() => requestSort('title')}
             >
               <div className="flex items-center">
-                Bug Report
+                Laporan
                 {sortConfig.key === 'title' && (
                   sortConfig.direction === 'asc' ? 
                   <ChevronUpIcon className="ml-1 h-4 w-4" /> : 

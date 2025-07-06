@@ -87,7 +87,7 @@ const AuthFormUser = ({ buttonText = "Login" }) => {
 
   return (
     <div className="w-full max-w-md mx-auto p-8 bg-white rounded-lg shadow-md">
-      <h2 className="text-2xl font-bold text-center mb-6">Login as a User</h2>
+      <h2 className="text-2xl font-bold text-center mb-6">Login Sebagai User</h2>
 
       {error.general && (
         <p className="text-red-500 text-sm text-center mb-4">{error.general}</p>
@@ -132,7 +132,7 @@ const AuthFormUser = ({ buttonText = "Login" }) => {
       </form>
 
       <div className="mt-4 text-center">
-        <a href="/user/forgot-password" className="text-blue-500 hover:underline">
+        <a href="/forgot-password" className="text-blue-500 hover:underline">
           Lupa Password?
         </a>
       </div>

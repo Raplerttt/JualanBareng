@@ -162,7 +162,7 @@ const FavoriteComponents = () => {
         className="text-center mb-12"
       >
         <h2 className="text-4xl font-extrabold text-gray-800 mb-2 tracking-tight">
-          My Favorite Products
+          Produk Favorit
         </h2>
       </motion.div>
 

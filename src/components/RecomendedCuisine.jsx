@@ -101,8 +101,9 @@ const RecommendedCuisine = () => {
   return (
     <section className="py-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       <div className="text-center mb-12">
-        <h2 className="text-4xl font-bold text-gray-900 mb-3">Recommended Categories</h2>
-        <p className="text-lg text-gray-600">Explore our curated selection of categories</p>
+        <h2 className="text-4xl font-bold text-gray-900 mb-3">Recommended Kategori</h2>
+        <p className="text-lg text-gray-600">
+        Jelajahi pilihan kategori pilihan kami</p>
       </div>
 
       <motion.div
@@ -148,12 +149,6 @@ const RecommendedCuisine = () => {
           </motion.div>
         ))}
       </motion.div>
-
-      <div className="text-center mt-12">
-        <button className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-medium rounded-full shadow-md hover:shadow-lg transition-all duration-300">
-          View All Categories
-        </button>
-      </div>
     </section>
   );
 };

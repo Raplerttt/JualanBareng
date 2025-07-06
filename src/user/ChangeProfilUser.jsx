@@ -193,7 +193,7 @@ const ChangeProfileUser = () => {
       <div className="max-w-3xl mx-auto">
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-blue-700 p-6 text-white">
+          <div className="bg-gradient-to-r bg-[#80CBC4] p-6 text-white">
             <div className="flex justify-between items-center">
               <div>
                 <h1 className="text-2xl font-bold tracking-tight">User Profile</h1>

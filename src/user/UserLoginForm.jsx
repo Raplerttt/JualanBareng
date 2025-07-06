@@ -17,7 +17,7 @@ const LoginFormUser  = () => {
             className="w-43 h-43 mb-4" // Increased size for better visibility
           />
           <h2 className="text-2xl font-semibold text-green-600 text-center md:text-left mb-4">
-            Want to become a seller?
+            Ingin Menjadi Penjual?
           </h2>
 
           {/* Flex container for buttons (Mobile and Desktop) */}
@@ -26,7 +26,7 @@ const LoginFormUser  = () => {
               className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg shadow hover:bg-blue-600"
               onClick={() => navigate('/seller/login')} // Navigate to seller login
             >
-              Login as Seller
+              Masuk Sebagai Penjual
             </button>
             <button
               className="flex-1 px-4 py-2 rounded-lg shadow"
@@ -36,7 +36,7 @@ const LoginFormUser  = () => {
               }}
               onClick={() => navigate('/seller/register')} // Navigate to seller register
             >
-              Register as Seller
+              Daftar Sebagai Penjual
             </button>
           </div>
         </div>

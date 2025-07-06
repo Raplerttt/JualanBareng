@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FaList, FaSearch, FaCalendarAlt, FaMoneyBillWave, FaTruck, FaCheckCircle, FaTimesCircle, FaSpinner } from "react-icons/fa";
+import { FaList, FaSearch, FaCalendarAlt, FaMoneyBillWave, FaTruck, FaCheckCircle, FaTimesCircle, FaSpinner, FaFileExcel } from "react-icons/fa";
 import axios from "../../utils/axios";
 import { toast } from "react-toastify";
+import * as XLSX from "xlsx";
 
 const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }) => {
   const [localOrders, setLocalOrders] = useState(orders);
@@ -48,8 +49,8 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
       setUpdatingStatus(orderId);
       
       // Optimistic update
-      setLocalOrders(prev =>
-        prev.map(o => o.id === orderId ? { ...o, status: newStatus } : o)
+      setLocalOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
 
       await axios.patch(
@@ -61,18 +62,16 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
       toast.success(
         <div>
           <p className="font-semibold">Status pesanan berhasil diubah!</p>
-          <p className="text-sm">ID: #{orderId} → {formatStatus(newStatus)}</p>
+          <p className="text-sm">ID: #{orderId} → {formatStatus(newStatus).text}</p>
         </div>,
         { autoClose: 3000 }
       );
     } catch (err) {
       console.error("Update error:", err);
-      toast.error(
-        err.response?.data?.message || "Gagal memperbarui status pesanan"
-      );
+      toast.error(err.response?.data?.message || "Gagal memperbarui status pesanan");
       // Rollback
-      setLocalOrders(prev =>
-        prev.map(o => o.id === orderId ? previousOrder : o)
+      setLocalOrders((prev) =>
+        prev.map((o) => (o.id === orderId ? previousOrder : o))
       );
     } finally {
       setUpdatingStatus(null);
@@ -86,9 +85,47 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
       DIPROSES: { text: "Diproses", icon: <FaSpinner className="mr-1 animate-spin" />, color: "bg-blue-100 text-blue-800" },
       DIKIRIM: { text: "Dikirim", icon: <FaTruck className="mr-1" />, color: "bg-purple-100 text-purple-800" },
       SELESAI: { text: "Selesai", icon: <FaCheckCircle className="mr-1" />, color: "bg-green-100 text-green-800" },
-      DIBATALKAN: { text: "Dibatalkan", icon: <FaTimesCircle className="mr-1" />, color: "bg-red-100 text-red-800" }
+      DIBATALKAN: { text: "Dibatalkan", icon: <FaTimesCircle className="mr-1" />, color: "bg-red-100 text-red-800" },
     };
     return statusMap[status] || { text: status, icon: null, color: "bg-gray-100 text-gray-800" };
+  };
+
+  // Fungsi untuk ekspor pesanan ke Excel
+  const exportToExcel = () => {
+    // Mengumpulkan data pesanan dalam format yang sesuai untuk Excel
+    const data = filteredOrders.map((order) => ({
+      "ID Pesanan": `#${order.id}`,
+      Pelanggan: order.user?.fullName || "Tidak diketahui",
+      Email: order.user?.email || "-",
+      "Nama Toko": order.seller?.storeName || "-",
+      Total: `Rp ${order.totalAmount?.toLocaleString("id-ID") || "0"}`,
+      Status: formatStatus(order.status).text,
+      Alamat: order.deliveryAddress || "Tidak ada alamat",
+      "Tanggal Pemesanan": new Date(order.createdAt).toLocaleString("id-ID", {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }),
+    }));
+
+    // Membuat worksheet dan workbook
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Pesanan");
+
+    // Menyesuaikan lebar kolom (opsional)
+    worksheet["!cols"] = [
+      { wch: 15 }, // ID Pesanan
+      { wch: 25 }, // Pelanggan
+      { wch: 30 }, // Email
+      { wch: 25 }, // Nama Toko
+      { wch: 20 }, // Total
+      { wch: 20 }, // Status
+      { wch: 40 }, // Alamat
+      { wch: 25 }, // Tanggal Pemesanan
+    ];
+
+    // Menyimpan file Excel
+    XLSX.writeFile(workbook, `Laporan_Pesanan_${new Date().toLocaleDateString("id-ID")}.xlsx`);
   };
 
   // Loading state with skeleton loader
@@ -156,9 +193,18 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
               </span>
             </h2>
           </div>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <FaCalendarAlt className="text-gray-400" />
-            <span>Terakhir diperbarui: {new Date().toLocaleTimeString("id-ID")}</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <FaCalendarAlt className="text-gray-400" />
+              <span>Terakhir diperbarui: {new Date().toLocaleTimeString("id-ID")}</span>
+            </div>
+            <button
+              onClick={exportToExcel}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none flex items-center"
+            >
+              <FaFileExcel className="mr-2" />
+              Ekspor ke Excel
+            </button>
           </div>
         </div>
       </div>
@@ -240,7 +286,7 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
                           const s = formatStatus(status);
                           return (
                             <option key={status} value={status} className="flex items-center">
-                              {s.icon} {s.text}
+                              {s.text}
                             </option>
                           );
                         })}
@@ -259,7 +305,7 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
                         {new Date(order.createdAt).toLocaleDateString("id-ID")}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {new Date(order.createdAt).toLocaleTimeString("id-ID", { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(order.createdAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}
                       </div>
                     </td>
                   </motion.tr>

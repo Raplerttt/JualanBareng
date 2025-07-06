@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { FaPaperclip, FaCamera, FaCheck, FaCheckDouble, FaStore, FaEllipsisV } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../utils/axios';
 import toast from 'react-hot-toast';
 import { AuthContext } from '../auth/authContext';
+import { debounce } from 'lodash'; // Install lodash: `npm install lodash`
 
 const ChatComponents = () => {
   const { user } = useContext(AuthContext);
+  const { sellerId: paramSellerId } = useParams();
   const [selectedSeller, setSelectedSeller] = useState(null);
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
@@ -15,12 +17,15 @@ const ChatComponents = () => {
   const [cameraImage, setCameraImage] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sellers, setSellers] = useState([]);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const navigate = useNavigate();
   const messageInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
-  // Fetch all chats to get unique sellers, sorted by latest chat id
+  // Ambil semua obrolan untuk mendapatkan daftar penjual unik
   useEffect(() => {
+    let isMounted = true;
+
     const fetchChats = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -34,8 +39,11 @@ const ChatComponents = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        if (!isMounted) return;
+
         const chatData = response.data.data || [];
         chatData.sort((a, b) => a.id - b.id);
+
         const sellerMap = new Map();
         chatData.forEach((chat) => {
           sellerMap.set(chat.sellerId, {
@@ -56,30 +64,99 @@ const ChatComponents = () => {
 
         const uniqueSellers = Array.from(sellerMap.values()).sort((a, b) => a.chatId - b.chatId);
         setSellers(uniqueSellers);
+
+        if (paramSellerId) {
+          const parsedId = parseInt(paramSellerId);
+          const autoSelected = uniqueSellers.find((s) => s.id === parsedId);
+
+          if (autoSelected) {
+            debouncedHandleSellerSelect(autoSelected);
+          } else {
+            try {
+              const sellerRes = await axios.get(`/seller/${parsedId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+
+              if (!isMounted) return;
+
+              const sellerData = sellerRes.data.data;
+              const fallbackSeller = {
+                id: parsedId,
+                name: sellerData.storeName || `Penjual ${parsedId}`,
+                profilePic: sellerData.photo || 'https://randomuser.me/api/portraits/lego/1.jpg',
+                lastMessage: '',
+                time: '',
+                chatId: null,
+                orderId: null,
+              };
+
+              setSellers((prev) => [...prev, fallbackSeller]);
+              debouncedHandleSellerSelect(fallbackSeller);
+            } catch (err) {
+              toast.error('Gagal memuat data penjual');
+              console.error('Gagal memuat data penjual:', err);
+            }
+          }
+        }
       } catch (err) {
+        if (!isMounted) return;
         toast.error(err.response?.data?.message || 'Gagal memuat chat');
         console.error('Gagal memuat chat:', err);
       }
     };
 
     fetchChats();
-  }, [navigate, user]);
 
-  // Fetch messages for selected seller
+    return () => {
+      isMounted = false;
+    };
+  }, [navigate, user, paramSellerId]);
+
+  // Pilih penjual otomatis berdasarkan paramSellerId
+  useEffect(() => {
+    if (paramSellerId && sellers.length > 0 && !selectedSeller) {
+      const seller = sellers.find((s) => s.id === parseInt(paramSellerId));
+      if (seller) {
+        debouncedHandleSellerSelect(seller);
+      }
+    }
+  }, [paramSellerId, sellers]);
+
+  // Ambil pesan untuk penjual yang dipilih
   const handleSellerSelect = async (seller) => {
+    console.log('Memilih penjual:', seller.id, seller.name);
     setSelectedSeller(seller);
+    setMessages([]); // Hapus pesan segera
+    console.log('Pesan dihapus');
+    setIsLoadingMessages(true);
+
     try {
       const token = localStorage.getItem('token');
+      console.log('Mengambil pesan untuk sellerId:', seller.id); // Log sellerId yang dikirim
       const response = await axios.get(`/chats?sellerId=${seller.id}`, {
         headers: { Authorization: `Bearer ${token}` },
+        'Cache-Control': 'no-cache',
+        params: { timestamp: new Date().getTime() }, // Tambahkan timestamp untuk mencegah cache
       });
 
+      console.log('Respons API:', response.data.data);
       const chatData = response.data.data || [];
-      chatData.sort((a, b) => a.id - b.id);
-      const chatMessages = chatData.flatMap((chat) =>
+
+      // Validasi bahwa respons hanya berisi data untuk sellerId yang diminta
+      const filteredChatData = chatData.filter((chat) => chat.sellerId === seller.id);
+      if (filteredChatData.length !== chatData.length) {
+        console.warn(
+          'Respons API berisi data untuk sellerId yang salah:',
+          chatData.map((chat) => chat.sellerId)
+        );
+        toast.error('Data obrolan tidak sesuai dengan penjual yang dipilih');
+      }
+
+      filteredChatData.sort((a, b) => a.id - b.id);
+
+      const chatMessages = filteredChatData.flatMap((chat) =>
         (chat.messages || []).map((msg) => ({
-          // Gunakan senderType dari API untuk menentukan role
-          sender: msg.senderType === 'USER' ? 'User' : msg.senderType === 'SELLER' ? 'Seller' : 'Unknown',
+          sender: msg.senderType === 'USER' ? 'User' : 'Seller',
           text: msg.content,
           status: 'read',
           time: new Date(msg.createdAt).toLocaleTimeString([], {
@@ -88,13 +165,54 @@ const ChatComponents = () => {
           }),
         }))
       );
+
       setMessages(chatMessages);
+      console.log('Pesan diperbarui:', chatMessages);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Gagal memuat pesan');
       console.error('Gagal memuat pesan:', err);
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
+  // Debounce handleSellerSelect untuk mencegah panggilan cepat
+  const debouncedHandleSellerSelect = debounce(handleSellerSelect, 300);
+
+  // Ambil ulang pesan untuk penjual
+  const refetchMessagesBySeller = async (seller) => {
+    try {
+      const token = localStorage.getItem('token');
+      console.log('Mengambil ulang pesan untuk sellerId:', seller.id);
+      const response = await axios.get(`/chats?sellerId=${seller.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        params: { timestamp: new Date().getTime() },
+      });
+
+      const chatData = response.data.data || [];
+      const filteredChatData = chatData.filter((chat) => chat.sellerId === seller.id);
+      filteredChatData.sort((a, b) => a.id - b.id);
+
+      const chatMessages = filteredChatData.flatMap((chat) =>
+        (chat.messages || []).map((msg) => ({
+          sender: msg.senderType === 'USER' ? 'User' : 'Seller',
+          text: msg.content,
+          status: 'read',
+          time: new Date(msg.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        }))
+      );
+
+      setMessages(chatMessages);
+      console.log('Pesan diambil ulang:', chatMessages);
+    } catch (err) {
+      console.error('Gagal mengambil ulang pesan:', err);
+    }
+  };
+
+  // Kirim pesan
   const handleSendMessage = async () => {
     if (!message.trim() && !file && !cameraImage) return;
 
@@ -109,45 +227,71 @@ const ChatComponents = () => {
 
     try {
       const token = localStorage.getItem('token');
+      let chatId = selectedSeller.chatId;
 
-      const response = await axios.post(
-        '/messages',
-        {
-          chatId: selectedSeller.chatId,
-          senderId: user.id, // User yang login
-          senderType: 'USER', // Role user
-          content: message.trim() || 'Lampiran',
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      if (!chatId) {
+        const chatResponse = await axios.post(
+          '/chats',
+          {
+            userId: user.id,
+            sellerId: selectedSeller.id,
+            message: message.trim() || 'Lampiran',
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      const newChatMessage = response.data.data;
+        const newChat = chatResponse.data.data;
+        chatId = newChat.id;
 
-      setMessages([...messages, newMessage]);
+        const updatedSeller = {
+          ...selectedSeller,
+          chatId,
+          lastMessage: newMessage.text,
+          time: newMessage.time,
+        };
+        setSelectedSeller(updatedSeller);
+
+        setSellers((prev) =>
+          prev.map((s) => (s.id === selectedSeller.id ? updatedSeller : s))
+        );
+
+        await refetchMessagesBySeller(updatedSeller);
+      } else {
+        await axios.post(
+          '/messages',
+          {
+            chatId,
+            senderId: user.id,
+            senderType: 'USER',
+            content: message.trim() || 'Lampiran',
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setMessages((prev) => [...prev, newMessage]);
+
+        setSellers((prev) =>
+          prev.map((s) =>
+            s.id === selectedSeller.id
+              ? { ...s, lastMessage: newMessage.text, time: newMessage.time }
+              : s
+          )
+        );
+      }
+
       setMessage('');
       setFile(null);
       setCameraImage(null);
 
-      // Update seller list
-      setSellers((prev) => {
-        const updatedSellers = prev.filter((s) => s.id !== selectedSeller.id);
-        return [
-          ...updatedSellers,
-          {
-            ...selectedSeller,
-            lastMessage: message.trim() || 'Lampiran',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            chatId: newChatMessage.chatId || selectedSeller.chatId,
-          },
-        ];
-      });
-
-      // Simulate seller response
       setTimeout(() => {
         setMessages((prev) => [
           ...prev,
           {
-            sender: 'Seller', // Role Seller untuk simulasi
+            sender: 'Seller',
             text: 'Pesan diterima, terima kasih!',
             status: 'read',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -179,10 +323,12 @@ const ChatComponents = () => {
     }
   };
 
+  // Gulir ke pesan terbaru
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Fokus ke input pesan saat penjual dipilih
   useEffect(() => {
     if (selectedSeller && messageInputRef.current) {
       messageInputRef.current.focus();
@@ -234,7 +380,7 @@ const ChatComponents = () => {
                 className={`flex items-center p-3 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
                   selectedSeller?.id === seller.id ? 'bg-green-50' : ''
                 }`}
-                onClick={() => handleSellerSelect(seller)}
+                onClick={() => debouncedHandleSellerSelect(seller)}
               >
                 <img
                   src={seller.profilePic}
@@ -254,11 +400,11 @@ const ChatComponents = () => {
         </div>
       </div>
 
-      {/* Chat Area */}
+      {/* Area Obrolan */}
       <div className="flex-1 flex flex-col">
         {selectedSeller ? (
           <>
-            {/* Chat Header */}
+            {/* Header Obrolan */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
               <div className="flex items-center">
                 <img
@@ -285,58 +431,70 @@ const ChatComponents = () => {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* Pesan */}
             <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
-              <div className="space-y-3 max-w-3xl mx-auto">
-                {messages.map((msg, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}
-                  >
+              {isLoadingMessages ? (
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-gray-500">Memuat pesan...</p>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex justify-center items-center h-full">
+                  <p className="text-gray-500">Belum ada pesan</p>
+                </div>
+              ) : (
+                <div className="space-y-3 max-w-3xl mx-auto">
+                  {messages.map((msg, index) => (
                     <div
-                      className={`relative max-w-xs lige:max-w-md px-4 py-2 rounded-lg ${
-                        msg.sender === 'User'
-                          ? 'bg-green-500 text-white rounded-tr-none'
-                          : 'bg-white text-gray-800 rounded-tl-none shadow-sm'
-                      }`}
+                      key={index}
+                      className={`flex ${msg.sender === 'User' ? 'justify-end' : 'justify-start'}`}
                     >
-                      {msg.text}
-                      {msg.cameraImage && (
-                        <img
-                          src={msg.cameraImage}
-                          alt="Kamera"
-                          className="mt-2 max-w-xs rounded-md"
-                        />
-                      )}
-                      {msg.file && (
-                        <div className="mt-2 p-2 bg-white bg-opacity-20 rounded">
-                          <a
-                            href={URL.createObjectURL(msg.file)}
-                            download
-                            className="flex items-center text-sm"
-                          >
-                            <FaPaperclip className="mr-2" />
-                            {msg.file.name}
-                          </a>
-                        </div>
-                      )}
-                      <div className="fle items-center justify-end mt-1 space-x-1">
-                        <span className="text-xs opacity-70">{msg.time}</span>
-                        {msg.sender === 'User' && (
-                          <span className="ml-1">
-                            {msg.status === 'sent' && <FaCheck className="text-xs" />}
-                            {msg.status === 'read' && <FaCheckDouble className="text-xs text-blue-300" />}
-                          </span>
+                      <div
+                        className={`relative max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          msg.sender === 'User'
+                            ? 'bg-green-500 text-white rounded-tr-none'
+                            : 'bg-white text-gray-800 rounded-tl-none shadow-sm'
+                        }`}
+                      >
+                        {msg.text}
+                        {msg.cameraImage && (
+                          <img
+                            src={msg.cameraImage}
+                            alt="Kamera"
+                            className="mt-2 max-w-xs rounded-md"
+                          />
                         )}
+                        {msg.file && (
+                          <div className="mt-2 p-2 bg-white bg-opacity-20 rounded">
+                            <a
+                              href={URL.createObjectURL(msg.file)}
+                              download
+                              className="flex items-center text-sm"
+                            >
+                              <FaPaperclip className="mr-2" />
+                              {msg.file.name}
+                            </a>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-end mt-1 space-x-1">
+                          <span className="text-xs opacity-70">{msg.time}</span>
+                          {msg.sender === 'User' && (
+                            <span className="ml-1">
+                              {msg.status === 'sent' && <FaCheck className="text-xs" />}
+                              {msg.status === 'read' && (
+                                <FaCheckDouble className="text-xs text-blue-300" />
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </div>
+                  ))}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
             </div>
 
-            {/* Message Input */}
+            {/* Input Pesan */}
             <div className="p-4 bg-white border-t border-gray-200">
               <div className="flex items-center space-x-2">
                 <label className="cursor-pointer text-gray-500 hover:text-green-600 transition-colors">

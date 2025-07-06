@@ -9,11 +9,11 @@ const axiosInstance = axios.create({
 
 // Daftar endpoint publik yang tidak memerlukan token
 const publicEndpoints = [
-  "/product",
-  "/categories",
-  "/login",
-  "/register",
-  "/",
+  "/api/product",
+  "/api/categories",
+  "/api/login",
+  "/api/register",
+  "/api/",
 ];
 
 axiosInstance.interceptors.request.use(
@@ -22,6 +22,8 @@ axiosInstance.interceptors.request.use(
     const isPublic = publicEndpoints.some((endpoint) =>
       config.url.startsWith(endpoint)
     );
+
+    console.log("Request to:", config.url, "Is Public:", isPublic); // Debugging log
 
     if (!isPublic) {
       // Daftar kunci token yang mungkin digunakan

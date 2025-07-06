@@ -33,6 +33,7 @@ import {
   BarElement,
   Tooltip,
   Legend,
+  Filler,
 } from 'chart.js';
 import axios from '../../utils/axios';
 import ProductsSection from './ProductSection';
@@ -40,7 +41,6 @@ import OrdersSection from './OrderSection';
 import ChatSection from './ChatSection';
 import SettingsSection from './SettingSection';
 
-// Register ChartJS components
 ChartJS.register(
   LinearScale,
   CategoryScale,
@@ -48,7 +48,8 @@ ChartJS.register(
   LineElement,
   BarElement,
   Tooltip,
-  Legend
+  Legend,
+  Filler 
 );
 
 const SellerDashboard = () => {
@@ -156,11 +157,11 @@ const SellerDashboard = () => {
       } catch (err) {
         console.error('Error fetching data:', err);
         setError({
-          seller: 'Failed to load seller data',
-          products: 'Failed to load products',
-          orders: 'Failed to load orders',
-          customers: 'Failed to load customers',
-          categories: 'Failed to load categories',
+          seller: err.message.includes('seller/me') ? err.response?.data?.message || 'Failed to load seller data' : null,
+          products: err.message.includes('product/my-product') ? err.response?.data?.message || 'Failed to load products' : null,
+          orders: err.message.includes('orders') ? err.response?.data?.message || 'Failed to load orders' : null,
+          customers: err.message.includes('users') ? err.response?.data?.message || 'Failed to load customers' : null,
+          categories: err.message.includes('categories') ? err.response?.data?.message || 'Failed to load categories' : null,
         });
         setLoading({
           seller: false,
@@ -222,10 +223,10 @@ const SellerDashboard = () => {
   // Navigation items
   const navItems = [
     { icon: <FaHome />, label: 'Dashboard', section: 'dashboard' },
-    { icon: <FaBox />, label: 'Products', section: 'products' },
-    { icon: <FaList />, label: 'Orders', section: 'orders' },
+    { icon: <FaBox />, label: 'Produk', section: 'products' },
+    { icon: <FaList />, label: 'Order', section: 'orders' },
     { icon: <FaComments />, label: 'Chat', section: 'chat' },
-    { icon: <FaCog />, label: 'Settings', section: 'settings' },
+    { icon: <FaCog />, label: 'Setting', section: 'settings' },
     { icon: <FaSignOutAlt />, label: 'Logout', section: 'logout', action: handleLogout },
   ];
 
@@ -290,18 +291,18 @@ const SellerDashboard = () => {
         initial={{ x: '-100%' }}
         animate={{ x: isSidebarOpen ? 0 : '-100%' }}
         transition={{ type: 'tween', duration: 0.3 }}
-        className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b from-indigo-800 to-purple-900 text-white shadow-xl z-50"
+        className="fixed top-0 left-0 h-full w-64 bg-gradient-to-b bg-[#80CBC4] text-white shadow-xl z-50"
       >
         <div className="p-6 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="bg-white p-2 rounded-lg">
               <FaStore className="text-indigo-700 text-xl" />
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-white">Seller Hub</h2>
+            <h2 className="text-xl font-bold tracking-tight text-black">Seller Hub</h2>
           </div>
           <button
             onClick={() => setIsSidebarOpen(true)}
-            className="md:hidden text-white hover:text-gray-200 focus:outline-none"
+            className="md:hidden text-black hover:text-gray-200 focus:outline-none"
           >
             <FaTimes className="h-5 w-5" />
           </button>
@@ -315,8 +316,8 @@ const SellerDashboard = () => {
                 setIsSidebarOpen(true);
                 if (item.action) item.action();
               }}
-              className={`w-full flex items-center space-x-3 px-6 py-3 text-left text-white hover:bg-indigo-700 transition-all duration-200 rounded-r-full ${
-                activeSection === item.section ? 'bg-indigo-700' : ''
+              className={`w-full flex items-center space-x-3 px-6 py-3 text-left text-black hover:bg-[#3fcec0]  transition-all duration-200 rounded-r-full ${
+                activeSection === item.section ? 'bg-[#3fcec0]' : ''
               }`}
             >
               <span className="text-lg">{item.icon}</span>
@@ -336,7 +337,7 @@ const SellerDashboard = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="bg-gradient-to-r from-indigo-700 to-purple-700 text-white p-4 shadow-lg"
+          className="bg-gradient-to-r bg-[#80CBC4] text-black p-4 shadow-lg"
         >
           <div className="container mx-auto flex flex-col md:flex-row items-center justify-between">
             <div className="flex items-center space-x-4 mb-4 md:mb-0">
@@ -354,17 +355,16 @@ const SellerDashboard = () => {
                   <h1 className="text-xl font-bold">
                     {sellerData?.storeName || 'My Store'}
                   </h1>
-                  <p className="text-xs opacity-80">Manage your culinary business</p>
                 </div>
               </div>
             </div>
             <div className="flex space-x-6">
               <div className="text-center bg-white/10 p-3 rounded-lg min-w-[100px]">
-                <p className="text-xs opacity-80">Products</p>
+                <p className="text-xs opacity-80">Produk</p>
                 <p className="text-xl font-semibold">{products.length}</p>
               </div>
               <div className="text-center bg-white/10 p-3 rounded-lg min-w-[100px]">
-                <p className="text-xs opacity-80">Total Orders</p>
+                <p className="text-xs opacity-80">Total Order</p>
                 <p className="text-xl font-semibold">{orders.length}</p>
               </div>
               <div className="hidden md:block text-center bg-white/10 p-3 rounded-lg min-w-[100px]">
@@ -456,7 +456,7 @@ const SellerDashboard = () => {
             >
               <div className="flex justify-between items-center mb-5">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center">
-                  <FaChartLine className="mr-2 text-indigo-600" /> Dashboard Overview
+                  <FaChartLine className="mr-2 text-indigo-600" /> Dashboard
                 </h2>
                 <div className="text-sm text-gray-500">
                   Last updated: {new Date().toLocaleDateString('en-US', {
@@ -469,33 +469,43 @@ const SellerDashboard = () => {
               {loading.products || loading.orders || loading.seller ? (
                 <div className="text-center py-12">Loading dashboard...</div>
               ) : error.products || error.orders || error.seller ? (
-                <div className="text-center py-12 text-red-600">Failed to load dashboard data</div>
+                <div className="text-center py-12">
+                  <p className="text-red-600">{error.seller}</p>
+                  <p className="text-red-600">{error.products}</p>
+                  <p className="text-red-600">{error.orders}</p>
+                  <button
+                    onClick={() => fetchData()}
+                    className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Retry
+                  </button>
+                </div>
               ) : (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                     <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
-                      <h3 className="text-lg font-semibold text-indigo-700 mb-2">Product Summary</h3>
-                      <p className="text-gray-600">Total Products: {products.length}</p>
+                      <h3 className="text-lg font-semibold text-indigo-700 mb-2">Ringkasan Produk</h3>
+                      <p className="text-gray-600">Total Produk: {products.length}</p>
                       <p className="text-gray-600">
-                        In Stock: {products.reduce((sum, p) => sum + (p.stock || 0), 0)}
+                        Stok: {products.reduce((sum, p) => sum + (p.stock || 0), 0)}
                       </p>
                       <p className="text-gray-600">
                         Avg. Rating: {calculateAverageRating(products)}
                       </p>
                     </div>
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                      <h3 className="text-lg font-semibold text-blue-700 mb-2">Order Summary</h3>
-                      <p className="text-gray-600">Total Orders: {orders.length}</p>
+                      <h3 className="text-lg font-semibold text-blue-700 mb-2">Ringkasan Order</h3>
+                      <p className="text-gray-600">Total Order: {orders.length}</p>
                       <p className="text-gray-600">
                         Pending: {orders.filter((o) => o.status === 'PENDING').length}
                       </p>
                       <p className="text-gray-600">
-                        Total Revenue: Rp{' '}
+                        Total Penghasilan: Rp{' '}
                         {orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0).toLocaleString('id-ID')}
                       </p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                      <h3 className="text-lg font-semibold text-green-700 mb-2">Top Products</h3>
+                      <h3 className="text-lg font-semibold text-green-700 mb-2">Produk Teratas</h3>
                       {(() => {
                         const productSales = products
                           .map((product) => ({
@@ -525,7 +535,7 @@ const SellerDashboard = () => {
                   </div>
 
                   <div className="bg-white p-4 rounded-lg border border-gray-100">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Revenue Trend (Last 7 Days)</h3>
+                    <h3 className="text-lg font-semibold text-gray-800 mb-4">Pendapatan (Dalam 7 hari Terakhir)</h3>
                     <div className="h-80">
                       <Chart type="line" data={chartData} options={chartOptions} />
                     </div>

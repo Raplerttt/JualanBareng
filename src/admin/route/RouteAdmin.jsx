@@ -5,6 +5,7 @@ import Dashboard from "../AdminDashboard";
 import BugReports from "../BugReports";
 import FraudCases from "../FraudCases";
 import Settings from "../Setting";
+import VerifikasiPendaftaran from "../VerifikasiPendaftaran";
 
 function AdminRoutes() {
   return (
@@ -46,6 +47,14 @@ function AdminRoutes() {
         element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="verifikasi-pendaftaran"
+        element={
+          <ProtectedRoute>
+            <VerifikasiPendaftaran />
           </ProtectedRoute>
         }
       />

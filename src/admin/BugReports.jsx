@@ -69,7 +69,7 @@ const BugReports = () => {
 
   return (
     <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Laporan Bug</h1>
+      <h1 className="text-3xl font-bold mb-4">Laporan</h1>
 
       <BugFilterPanel filters={filters} setFilters={setFilters} />
 
