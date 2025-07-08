@@ -36,7 +36,7 @@ const SettingsSection = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const token = localStorage.getItem("Sellertoken");
+  const token = localStorage.getItem("Admintoken");
 
   // Fetch seller data
   const fetchSellerData = async () => {

@@ -33,7 +33,7 @@ const OrdersSection = ({ orders = [], searchQuery = "", sortBy, loading, error }
       return;
     }
 
-    const token = localStorage.getItem("Sellertoken");
+    const token = localStorage.getItem("Admintoken");
     if (!token) {
       toast.error("Sesi habis, silakan login ulang");
       return;

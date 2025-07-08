@@ -15,13 +15,12 @@ const DetailStoreComponents = () => {
 
   useEffect(() => {
     const fetchStore = async () => {
-      if (!sellerId || isNaN(Number(sellerId))) {
+      if (!sellerId || typeof sellerId !== 'string') {
         toast.error('ID toko tidak valid');
         return navigate('/');
-      }
-
+      }      
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken');
         if (!token) {
           toast.error('Silakan login untuk melihat detail toko');
           return navigate('/user/login');

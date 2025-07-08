@@ -25,25 +25,25 @@ const ChatComponents = () => {
   // Ambil semua obrolan untuk mendapatkan daftar penjual unik
   useEffect(() => {
     let isMounted = true;
-
+  
     const fetchChats = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken') || localStorage.getItem('Usertoken') || localStorage.getItem('Sellertoken');
         if (!token || !user) {
           toast.error('Silakan login untuk melihat chat');
           navigate('/user/login');
           return;
         }
-
+  
         const response = await axios.get('/chats', {
           headers: { Authorization: `Bearer ${token}` },
         });
-
+  
         if (!isMounted) return;
-
+  
         const chatData = response.data.data || [];
         chatData.sort((a, b) => a.id - b.id);
-
+  
         const sellerMap = new Map();
         chatData.forEach((chat) => {
           sellerMap.set(chat.sellerId, {
@@ -52,44 +52,40 @@ const ChatComponents = () => {
             profilePic: chat.seller?.photo || 'https://randomuser.me/api/portraits/lego/1.jpg',
             lastMessage: chat.message || '',
             time: chat.createdAt
-              ? new Date(chat.createdAt).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+              ? new Date(chat.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
               : '',
             chatId: chat.id,
             orderId: chat.orderId || null,
           });
         });
-
+  
         const uniqueSellers = Array.from(sellerMap.values()).sort((a, b) => a.chatId - b.chatId);
         setSellers(uniqueSellers);
-
+  
         if (paramSellerId) {
-          const parsedId = parseInt(paramSellerId);
-          const autoSelected = uniqueSellers.find((s) => s.id === parsedId);
-
+          const autoSelected = uniqueSellers.find((s) => s.id === paramSellerId);
           if (autoSelected) {
             debouncedHandleSellerSelect(autoSelected);
           } else {
+            // Fetch seller jika belum ada
             try {
-              const sellerRes = await axios.get(`/seller/${parsedId}`, {
+              const sellerRes = await axios.get(`/seller/${paramSellerId}`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
-
+  
               if (!isMounted) return;
-
+  
               const sellerData = sellerRes.data.data;
               const fallbackSeller = {
-                id: parsedId,
-                name: sellerData.storeName || `Penjual ${parsedId}`,
+                id: paramSellerId,
+                name: sellerData.storeName || `Penjual ${paramSellerId}`,
                 profilePic: sellerData.photo || 'https://randomuser.me/api/portraits/lego/1.jpg',
                 lastMessage: '',
                 time: '',
                 chatId: null,
                 orderId: null,
               };
-
+  
               setSellers((prev) => [...prev, fallbackSeller]);
               debouncedHandleSellerSelect(fallbackSeller);
             } catch (err) {
@@ -104,13 +100,13 @@ const ChatComponents = () => {
         console.error('Gagal memuat chat:', err);
       }
     };
-
+  
     fetchChats();
-
     return () => {
       isMounted = false;
     };
   }, [navigate, user, paramSellerId]);
+  
 
   // Pilih penjual otomatis berdasarkan paramSellerId
   useEffect(() => {
@@ -124,50 +120,31 @@ const ChatComponents = () => {
 
   // Ambil pesan untuk penjual yang dipilih
   const handleSellerSelect = async (seller) => {
-    console.log('Memilih penjual:', seller.id, seller.name);
     setSelectedSeller(seller);
-    setMessages([]); // Hapus pesan segera
-    console.log('Pesan dihapus');
+    setMessages([]);
     setIsLoadingMessages(true);
-
+  
     try {
-      const token = localStorage.getItem('token');
-      console.log('Mengambil pesan untuk sellerId:', seller.id); // Log sellerId yang dikirim
+      const token = localStorage.getItem('Admintoken') || localStorage.getItem('Usertoken') || localStorage.getItem('Sellertoken');
       const response = await axios.get(`/chats?sellerId=${seller.id}`, {
         headers: { Authorization: `Bearer ${token}` },
-        'Cache-Control': 'no-cache',
-        params: { timestamp: new Date().getTime() }, // Tambahkan timestamp untuk mencegah cache
+        params: { timestamp: new Date().getTime() },
       });
-
-      console.log('Respons API:', response.data.data);
+  
       const chatData = response.data.data || [];
-
-      // Validasi bahwa respons hanya berisi data untuk sellerId yang diminta
-      const filteredChatData = chatData.filter((chat) => chat.sellerId === seller.id);
-      if (filteredChatData.length !== chatData.length) {
-        console.warn(
-          'Respons API berisi data untuk sellerId yang salah:',
-          chatData.map((chat) => chat.sellerId)
-        );
-        toast.error('Data obrolan tidak sesuai dengan penjual yang dipilih');
-      }
-
-      filteredChatData.sort((a, b) => a.id - b.id);
-
-      const chatMessages = filteredChatData.flatMap((chat) =>
+      const filtered = chatData.filter((chat) => chat.sellerId === seller.id);
+      filtered.sort((a, b) => a.id - b.id);
+  
+      const chatMessages = filtered.flatMap((chat) =>
         (chat.messages || []).map((msg) => ({
           sender: msg.senderType === 'USER' ? 'User' : 'Seller',
           text: msg.content,
           status: 'read',
-          time: new Date(msg.createdAt).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-          }),
+          time: new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         }))
       );
-
+  
       setMessages(chatMessages);
-      console.log('Pesan diperbarui:', chatMessages);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Gagal memuat pesan');
       console.error('Gagal memuat pesan:', err);
@@ -175,14 +152,14 @@ const ChatComponents = () => {
       setIsLoadingMessages(false);
     }
   };
-
-  // Debounce handleSellerSelect untuk mencegah panggilan cepat
+  
   const debouncedHandleSellerSelect = debounce(handleSellerSelect, 300);
+  
 
   // Ambil ulang pesan untuk penjual
   const refetchMessagesBySeller = async (seller) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       console.log('Mengambil ulang pesan untuk sellerId:', seller.id);
       const response = await axios.get(`/chats?sellerId=${seller.id}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -226,7 +203,7 @@ const ChatComponents = () => {
     };
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       let chatId = selectedSeller.chatId;
 
       if (!chatId) {

@@ -1,163 +1,244 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { AuthContext } from '../auth/authContext';
+import React, { useState, useCallback, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import axios from "../../utils/axios";
+import { AuthContext } from "../auth/authContext";
+import toast from "react-hot-toast";
 
 const Login = () => {
-const [formData, setFormData] = useState({ email: '', password: '' });
-const [error, setError] = useState({});
-const [loading, setLoading] = useState(false);
-const navigate = useNavigate();
-const { login } = useContext(AuthContext);
+  const navigate = useNavigate();
+  const { login } = useContext(AuthContext);
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-const API_URL = 'http://localhost:3000/api';
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: null, general: null }));
+  }, []);
 
-const validate = () => {
-    const errors = {};
-    if (!formData.email) errors.email = 'Email is required';
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) errors.email = 'Invalid email format';
-    if (!formData.password) errors.password = 'Password is required';
-    else if (formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
-    return errors;
-  };
+  const validate = useCallback(() => {
+    const { email, password } = formData;
+    const newErrors = {};
 
-const handleChange = (e) => {
-  const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
-  setError((prev) => ({ ...prev, [name]: '' }));
-};
+    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Format email tidak valid";
+    }
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError({});
-  const validationErrors = validate();
+    if (
+      !password ||
+      password.length < 8 ||
+      password.length > 30 ||
+      !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)
+    ) {
+      newErrors.password =
+        "Password harus 8–30 karakter, mengandung huruf besar, kecil, angka, dan simbol";
+    }
 
-  if (Object.keys(validationErrors).length > 0) {
-    setError(validationErrors);
-    return;
-  }
+    return newErrors;
+  }, [formData]);
 
-  try {
-    setLoading(true);
-    const response = await axios.post(
-      `${API_URL}/auth/login`,
-      formData,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrors({});
+    const validationErrors = validate();
 
-    const token = response.data.token;
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      toast.error("Periksa kembali input Anda");
+      return;
+    }
 
-    if (token) {
-      // Decode JWT to get user data and role
-      const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-      const userData = {
-        userId: tokenPayload.id,
-        role: tokenPayload.role,
-        email: tokenPayload.email,
-      };
+    setIsSubmitting(true);
 
-      if (tokenPayload.role !== 'ADMIN') {
-        setError({ general: 'This account is not an admin account.' });
-        setLoading(false);
-        return;
+    try {
+      const res = await axios.post(
+        "/auth/login",
+        { email: formData.email, password: formData.password },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      // Handle various response structures
+      let accessToken, refreshToken, user;
+      if (res.data.data) {
+        // Structure: { data: { accessToken, refreshToken, user } }
+        ({ accessToken, refreshToken, user } = res.data.data);
+      } else if (res.data.token) {
+        // Structure: { token, user }
+        accessToken = res.data.token;
+        refreshToken = res.data.refreshToken || "";
+        user = res.data.user;
+      } else if (res.data.accessToken && res.data.user) {
+        // Structure: { accessToken, refreshToken, user }
+        ({ accessToken, refreshToken, user } = res.data);
+      } else {
+        throw new Error("Struktur respons API tidak dikenali");
+      }
+
+      if (!accessToken || !user) {
+        throw new Error("Respons tidak valid: accessToken atau user tidak ditemukan");
+      }
+
+      if (user.role !== "ADMIN") {
+        throw new Error("Akun ini bukan akun admin");
       }
 
       // Store in localStorage
-      localStorage.setItem('Admintoken', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('role', tokenPayload.role);
+      localStorage.setItem("Admintoken", accessToken);
+      localStorage.setItem("AdminRefreshToken", refreshToken || "");
+      localStorage.setItem("AdminUser", JSON.stringify(user));
 
       // Update context state
-      login(userData);
-
-      navigate('/admin/dashboard');
-    } else {
-      setError({ general: 'Login failed: Invalid response from server.' });
+      login(accessToken, refreshToken, user);
+      toast.success("Login berhasil!");
+      navigate("/admin/dashboard");
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Terjadi kesalahan saat login. Silakan coba lagi.";
+      setErrors({ general: errorMessage });
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
     }
-  } catch (error) {
-    const errorMessage =
-      error.response?.data?.message ||
-      'An error occurred during login. Please try again.';
-    setError({ general: errorMessage });
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword((prev) => !prev);
+  }, []);
 
-return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="min-h-screen flex items-center justify-center bg-gray-100"
+    >
+      <div className="bg-white p-8 rounded-2xl shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Masuk Sebagai Admin</h2>
 
-        {error.general && (
-          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
-            {error.general}
-          </div>
+        {errors.general && (
+          <p className="text-red-500 text-sm text-center mb-4">{errors.general}</p>
         )}
 
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label
-              htmlFor="email"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Email
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`mt-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                error.email ? 'border-red-500' : ''
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <InputField
+            label="Email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            disabled={isSubmitting}
+          />
+          <PasswordField
+            label="Kata Sandi"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            showPassword={showPassword}
+            togglePasswordVisibility={togglePasswordVisibility}
+            error={errors.password}
+            disabled={isSubmitting}
+          />
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <span className="text-sm text-gray-600">
+              Bukan admin?{" "}
+              <Link to="/seller/login" className="text-indigo-600 hover:underline">
+                Masuk sebagai Penjual
+              </Link>{" "}
+              atau{" "}
+              <Link to="/user/login" className="text-indigo-600 hover:underline">
+                Pengguna
+              </Link>
+            </span>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              disabled={isSubmitting}
+              className={`px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors duration-200 ${
+                isSubmitting ? "opacity-50 cursor-not-allowed" : ""
               }`}
-              placeholder="Enter your email"
-              disabled={loading}
-            />
-            {error.email && (
-              <p className="mt-1 text-sm text-red-500">{error.email}</p>
-            )}
-          </div>
-
-          <div className="mb-6">
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-gray-700"
             >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`mt-1 w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                error.password ? 'border-red-500' : ''
-              }`}
-              placeholder="Enter your password"
-              disabled={loading}
-            />
-            {error.password && (
-              <p className="mt-1 text-sm text-red-500">{error.password}</p>
-            )}
+              {isSubmitting ? "Memuat..." : "Masuk"}
+            </motion.button>
           </div>
-
-          <button
-            type="submit"
-            className={`w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-            disabled={loading}
-          >
-            {loading ? 'Logging in...' : 'Log In'}
-          </button>
         </form>
       </div>
-    </div>
+    </motion.div>
   );
 };
+
+const InputField = ({ label, name, value, onChange, error, disabled, type = "text" }) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <input
+      id={name}
+      type={type}
+      name={name}
+      value={value}
+      onChange={onChange}
+      disabled={disabled}
+      className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 ${
+        error ? "border-red-500" : ""
+      }`}
+      aria-invalid={!!error}
+      aria-describedby={error ? `${name}-error` : undefined}
+    />
+    {error && (
+      <p id={`${name}-error`} className="text-red-500 text-sm mt-1">
+        {error}
+      </p>
+    )}
+  </div>
+);
+
+const PasswordField = ({
+  label,
+  name,
+  value,
+  onChange,
+  showPassword,
+  togglePasswordVisibility,
+  error,
+  disabled,
+}) => (
+  <div>
+    <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
+      {label}
+    </label>
+    <div className="relative">
+      <input
+        id={name}
+        type={showPassword ? "text" : "password"}
+        name={name}
+        value={value}
+        onChange={onChange}
+        disabled={disabled}
+        className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 ${
+          error ? "border-red-500" : ""
+        }`}
+        aria-invalid={!!error}
+        aria-describedby={error ? `${name}-error` : undefined}
+      />
+      <button
+        type="button"
+        onClick={togglePasswordVisibility}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-indigo-600"
+        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+      >
+        {showPassword ? "🙈" : "👁️"}
+      </button>
+    </div>
+    {error && (
+      <p id={`${name}-error`} className="text-red-500 text-sm mt-1">
+        {error}
+      </p>
+    )}
+  </div>
+);
 
 export default Login;

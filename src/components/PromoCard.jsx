@@ -32,7 +32,7 @@ const PromoCard = ({ promo, onClaimVoucher, isClaimed }) => {
 
 PromoCard.propTypes = {
   promo: PropTypes.shape({
-    id: PropTypes.number.isRequired,
+    id: PropTypes.string.isRequired,
     title: PropTypes.string.isRequired,
     description: PropTypes.string.isRequired,
     code: PropTypes.string.isRequired,

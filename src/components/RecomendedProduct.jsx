@@ -34,7 +34,7 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle, averageRating }) =
       <div className="relative w-full h-56 overflow-hidden rounded-t-xl bg-gradient-to-br from-gray-50 to-gray-100">
         {imageError ? (
           <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-            <span>Image not available</span>
+            <span>Gambar tidak tersedia</span>
           </div>
         ) : (
           <img
@@ -54,7 +54,7 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle, averageRating }) =
             onFavoriteToggle(product.id, isFavorite);
           }}
           className="favorite-button absolute top-3 right-3 cursor-pointer"
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          aria-label={isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}
           role="button"
         >
           <FaHeart 
@@ -75,12 +75,12 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle, averageRating }) =
         <h5 className="text-lg font-semibold text-gray-900 truncate mb-1">{product.productName}</h5>
         <div className="text-sm text-gray-600 space-y-1 mb-3">
           <p className="flex items-center">
-            <span className="text-gray-500 mr-1">Category:</span>
-            <span className="text-blue-600 font-medium">{product.category.name}</span>
+            <span className="text-gray-500 mr-1">Kategori:</span>
+            <span className="text-indigo-600 font-medium">{product.category?.name || 'Tidak diketahui'}</span>
           </p>
           <p className="flex items-start">
-            <span className="text-gray-500 mr-1">Location:</span>
-            <span className="text-gray-700">{product.seller?.address}</span>
+            <span className="text-gray-500 mr-1">Lokasi:</span>
+            <span className="text-gray-700">{product.seller?.address || 'Tidak tersedia'}</span>
           </p>
         </div>
         
@@ -103,7 +103,7 @@ const ProductCard = ({ product, isFavorite, onFavoriteToggle, averageRating }) =
   );
 };
 
-const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
+const ProductRecommendation = ({ title = 'Produk Rekomendasi' }) => {
   const [favorites, setFavorites] = useState({});
   const [products, setProducts] = useState([]);
   const [averageRatings, setAverageRatings] = useState({});
@@ -112,46 +112,51 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
 
   const fetchAverageRating = async (productId) => {
     try {
-      const token = localStorage.getItem("token");
-  
-      const response = await axios.get("/feedbacks", {
+      const token = localStorage.getItem('Admintoken');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+      console.log(`Mengambil rating untuk produk ${productId}`);
+
+      const response = await axios.get('/feedbacks', {
         params: { productId },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        ...config,
       });
-  
-      const feedbacks = response.data.data || [];
-  
+
+      console.log(`Respons API feedbacks untuk produk ${productId}:`, JSON.stringify(response.data, null, 2));
+
+      const feedbacks = response.data.data || response.data || [];
+
       if (feedbacks.length === 0) return 0;
-  
-      const totalRating = feedbacks.reduce((sum, feedback) => sum + feedback.rating, 0);
+
+      const totalRating = feedbacks.reduce((sum, feedback) => sum + (feedback.rating || 0), 0);
       return totalRating / feedbacks.length;
     } catch (err) {
-      console.error(`Failed to fetch feedback for product ${productId}:`, err);
+      console.error(`Gagal mengambil feedback untuk produk ${productId}:`, err.response?.data || err.message);
       return 0;
     }
   };
-  
 
   const handleFavoriteToggle = async (id, isCurrentlyFavorite) => {
     if (!Number.isInteger(id) || id <= 0) {
-      toast.error('Invalid product ID');
+      toast.error('ID produk tidak valid');
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       if (!token) {
-        toast.error('Please login to manage favorites');
+        toast.error('Silakan login untuk mengelola favorit');
+        navigate('/user/login');
         return;
       }
 
       const endpoint = isCurrentlyFavorite ? `/favorites/${id}` : '/favorites';
       const method = isCurrentlyFavorite ? 'delete' : 'post';
       const config = {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       };
+
+      console.log(`Mengubah status favorit untuk produk ${id}:`, { method, endpoint });
 
       if (method === 'post') {
         await axios.post(endpoint, { productId: id }, config);
@@ -159,22 +164,27 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
         await axios.delete(endpoint, config);
       }
 
-      setFavorites(prev => ({ ...prev, [id]: !prev[id] }));
-      toast.success(isCurrentlyFavorite ? 'Removed from favorites' : 'Added to favorites');
+      setFavorites((prev) => ({ ...prev, [id]: !prev[id] }));
+      toast.success(isCurrentlyFavorite ? 'Dihapus dari favorit' : 'Ditambahkan ke favorit');
     } catch (error) {
-      const message = error.response?.data?.message || 'Failed to update favorite';
+      const message = error.response?.data?.message || 'Gagal memperbarui favorit';
       toast.error(message);
-      console.error('Favorite update failed:', error);
+      console.error('Gagal memperbarui favorit:', error.response?.data || error.message);
     }
   };
 
   useEffect(() => {
     const fetchProductsAndRatings = async () => {
+      setLoading(true);
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken');
         const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+        console.log('Mengambil daftar produk...');
         const response = await axios.get('/product', config);
-        const productsData = response.data.data;
+        console.log('Respons API produk:', JSON.stringify(response.data, null, 2));
+
+        const productsData = response.data.data || response.data || [];
 
         // Fetch average ratings for each product
         const ratings = {};
@@ -187,15 +197,24 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
 
         // Fetch initial favorite status if logged in
         if (token) {
+          console.log('Mengambil daftar favorit...');
           const favoritesResponse = await axios.get('/favorites', config);
-          const favoriteIds = favoritesResponse.data.data.reduce((acc, fav) => {
-            acc[fav.productId] = true;
-            return acc;
-          }, {});
+          console.log('Respons API favorit:', JSON.stringify(favoritesResponse.data, null, 2));
+
+          const favoriteIds = (favoritesResponse.data.data || favoritesResponse.data || []).reduce(
+            (acc, fav) => {
+              acc[fav.productId] = true;
+              return acc;
+            },
+            {}
+          );
           setFavorites(favoriteIds);
         }
       } catch (err) {
-        setError(err.response?.data?.message || 'Failed to fetch products');
+        const message = err.response?.data?.message || 'Gagal memuat produk';
+        setError(message);
+        toast.error(message);
+        console.error('Gagal memuat produk:', err.response?.data || err.message);
       } finally {
         setLoading(false);
       }
@@ -218,9 +237,9 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
         <div className="flex justify-center items-center h-64">
           <motion.div
             animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
           >
-            <FaSpinner className="text-blue-500 text-4xl" />
+            <FaSpinner className="text-indigo-600 text-4xl" />
           </motion.div>
         </div>
       ) : error ? (
@@ -232,7 +251,7 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
       ) : products.length === 0 ? (
         <div className="text-center py-12">
           <div className="inline-block p-6 bg-gray-50 rounded-xl">
-            <p className="text-gray-500">No products available at the moment</p>
+            <p className="text-gray-500">Tidak ada produk yang tersedia saat ini</p>
           </div>
         </div>
       ) : (
@@ -245,7 +264,7 @@ const ProductRecommendation = ({ title = 'Recommended Produk' }) => {
               <ProductCard
                 key={product.id}
                 product={product}
-                isFavorite={favorites[product.id]}
+                isFavorite={favorites[product.id] || false}
                 onFavoriteToggle={handleFavoriteToggle}
                 averageRating={averageRatings[product.id] || 0}
               />

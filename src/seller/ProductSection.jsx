@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import axios from "../../utils/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPlus, FaBox, FaStar, FaEdit, FaTrash } from "react-icons/fa";
+import { jwtDecode } from "jwt-decode";
+
 
 const ProductsSection = ({
   products,
@@ -26,19 +28,21 @@ const ProductsSection = ({
   const [categoriesLoading, setCategoriesLoading] = useState(true);
   const [categoriesError, setCategoriesError] = useState(null);
   const [imageError, setImageError] = useState(false);
-  const token = localStorage.getItem("Sellertoken");
+  const token = localStorage.getItem("Admintoken");
   // Ambil sellerId dari localStorage
   const getSellerId = () => {
     try {
-      const sellerDataRaw = localStorage.getItem("SellerUser");
-      if (!sellerDataRaw) return null;
-      const sellerData = JSON.parse(sellerDataRaw);
-      return sellerData?.id || null;
+      const token = localStorage.getItem("Admintoken");
+      if (!token) return null;
+  
+      const decoded = jwtDecode(token); // ✅ pakai named import
+      return decoded?.id || null;
     } catch (err) {
-      console.error("Error parsing SellerUser:", err);
+      console.error("Error decoding token:", err);
       return null;
     }
   };
+  
 
   // Fungsi fetch produk ulang
   const fetchProducts = async () => {

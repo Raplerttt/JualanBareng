@@ -21,7 +21,7 @@ const Cart = () => {
 
   const refreshCart = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       const { data } = await axios.get('/cart', {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -51,7 +51,7 @@ const Cart = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       const [cartResponse, voucherResponse] = await Promise.all([
         axios.get('/cart', { headers: { Authorization: `Bearer ${token}` } }),
         axios.get(`/vouchers?userId=${user.id}`, { headers: { Authorization: `Bearer ${token}` } }),
@@ -100,7 +100,7 @@ const Cart = () => {
     }
   
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await axios.put(
         `/cart/item/${cartItemId}`,
         { quantity: newQuantity },
@@ -130,7 +130,7 @@ const Cart = () => {
       
       const refreshCart = async () => {
         try {
-          const token = localStorage.getItem('token');
+          const token = localStorage.getItem('Admintoken');
           const response = await axios.get('/cart', {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -156,7 +156,7 @@ const Cart = () => {
 
   const handleRemoveItem = async cartItemId => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await axios.delete(`/cart/item/${cartItemId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -194,7 +194,7 @@ const Cart = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await Promise.all(
         selectedIds.map(id =>
           axios.delete(`/cart/item/${id}`, { headers: { Authorization: `Bearer ${token}` } })
@@ -220,7 +220,7 @@ const Cart = () => {
     }
     setApplyingVoucher(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       if (!(await refreshCart())) {
         throw new Error('Gagal refresh keranjang');
       }

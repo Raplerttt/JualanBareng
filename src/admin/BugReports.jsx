@@ -5,9 +5,8 @@ import BugFilterPanel from './components/BugFilterPanel';
 
 const BugReports = () => {
   const [filters, setFilters] = useState({
-    status: 'all',
-    priority: 'all',
-    search: ''
+    search: '',
+    category: 'all'
   });
 
   const [bugReports, setBugReports] = useState([]);
@@ -22,18 +21,23 @@ const BugReports = () => {
         const token = localStorage.getItem('Admintoken');
         const headers = { Authorization: `Bearer ${token}` };
 
-        const response = await axios.get(`${API_URL}/reports?reportType=BUG`, { headers });
+        // Build query parameters based on filters
+        const queryParams = new URLSearchParams();
+        if (filters.search) queryParams.append('search', filters.search);
+        if (filters.category !== 'all') queryParams.append('category', filters.category);
+
+        const response = await axios.get(`${API_URL}/reports?${queryParams.toString()}`, { headers });
 
         setBugReports(response.data.data);
         setLoading(false);
       } catch (err) {
-        setError('Gagal memuat data bug');
+        setError('Gagal memuat data laporan');
         setLoading(false);
       }
     };
 
     fetchBugReports();
-  }, []);
+  }, [filters]); // Re-fetch when filters change
 
   const updateBugStatus = async (id, newStatus) => {
     try {
@@ -42,38 +46,28 @@ const BugReports = () => {
 
       await axios.put(`${API_URL}/reports/${id}`, { status: newStatus }, { headers });
 
-      setBugReports(prev =>
-        prev.map(bug =>
+      setBugReports((prev) =>
+        prev.map((bug) =>
           bug.id === id ? { ...bug, status: newStatus } : bug
         )
       );
     } catch (err) {
-      console.error('Gagal mengupdate status bug:', err);
+      console.error('Gagal mengupdate status laporan:', err);
     }
   };
 
-  const search = (filters.search || '').toLowerCase();
-
-  const filteredBugs = bugReports.filter(bug => {
-    const matchesStatus = filters.status === 'all' || bug.status === filters.status;
-    const matchesPriority = filters.priority === 'all' || bug.priority === filters.priority;
-    const matchesSearch =
-      (bug.title?.toLowerCase() || '').includes(search) ||
-      (bug.description?.toLowerCase() || '').includes(search);
-
-    return matchesStatus && matchesPriority && matchesSearch;
-  });
-
-  if (loading) return <div className="p-6">Memuat laporan bug...</div>;
+  if (loading) return <div className="p-6 text-gray-500">Memuat laporan...</div>;
   if (error) return <div className="p-6 text-red-500">{error}</div>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold mb-4">Laporan</h1>
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <h1 className="text-3xl font-bold text-gray-800 mb-6">Laporan</h1>
 
       <BugFilterPanel filters={filters} setFilters={setFilters} />
 
-      <BugReportTable bugReports={filteredBugs} updateBugStatus={updateBugStatus} />
+      <div className="mt-6">
+        <BugReportTable bugReports={bugReports} updateBugStatus={updateBugStatus} />
+      </div>
     </div>
   );
 };

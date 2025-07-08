@@ -2,10 +2,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 
 const ProtectedSellerRoute = ({ children }) => {
-  const token = localStorage.getItem('Sellertoken');
-  const role = localStorage.getItem('role'); // pastikan role disimpan saat login
+  const token = localStorage.getItem('Admintoken');
 
-  if (!token || role !== 'SELLER') {
+
+  if (!token) {
     return <Navigate to="/seller/login" replace />;
   }
 

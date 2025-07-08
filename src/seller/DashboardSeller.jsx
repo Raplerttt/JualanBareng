@@ -40,6 +40,7 @@ import ProductsSection from './ProductSection';
 import OrdersSection from './OrderSection';
 import ChatSection from './ChatSection';
 import SettingsSection from './SettingSection';
+import { jwtDecode } from "jwt-decode";
 
 ChartJS.register(
   LinearScale,
@@ -81,17 +82,18 @@ const SellerDashboard = () => {
     categories: null,
   });
 
-  const token = localStorage.getItem('Sellertoken');
+  const token = localStorage.getItem('Admintoken');
 
   // Helper function to get seller ID
   const getSellerId = () => {
     try {
-      const sellerDataRaw = localStorage.getItem('Sellertoken');
-      if (!sellerDataRaw) return null;
-      const sellerData = JSON.parse(sellerDataRaw);
-      return sellerData?.id || null;
+      const token = localStorage.getItem("Admintoken");
+      if (!token) return null;
+  
+      const decoded = jwtDecode(token);
+      return decoded?.id || null;
     } catch (err) {
-      console.error('Error parsing SellerUser:', err);
+      console.error("Error decoding token:", err);
       return null;
     }
   };
@@ -214,9 +216,8 @@ const SellerDashboard = () => {
 
   // Handle logout
   const handleLogout = () => {
-    localStorage.removeItem('Sellertoken');
-    localStorage.removeItem('SellerUser');
-    localStorage.removeItem('user');
+    localStorage.removeItem('Admintoken');
+    localStorage.removeItem('AdminRefreshToken');
     window.location.href = '/seller/login';
   };
 
@@ -800,13 +801,6 @@ const SellerDashboard = () => {
                       onChange={(e) => setEditProduct({ ...editProduct, image: e.target.files[0] })}
                       className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
                     />
-                    {editProduct.image && !editProduct.image.name && (
-                      <img
-                        src={`${process.env.REACT_APP_API_URL || ''}${editProduct.image}`}
-                        alt="Preview"
-                        className="mt-2 w-32 h-32 object-cover rounded-lg"
-                      />
-                    )}
                   </div>
                 </div>
                 <div className="flex justify-end space-x-3">
