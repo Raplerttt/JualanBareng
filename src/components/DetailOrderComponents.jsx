@@ -119,7 +119,7 @@ const CheckoutConfirmation = () => {
 
     setSubmitting(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       const fullAddress = `${deliveryAddress.street}, ${deliveryAddress.city}, ${deliveryAddress.postalCode}`;
       const payload = {
         userId: user.id,

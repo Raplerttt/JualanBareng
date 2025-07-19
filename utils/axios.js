@@ -9,65 +9,78 @@ const axiosInstance = axios.create({
 
 // Daftar endpoint publik yang tidak memerlukan token
 const publicEndpoints = [
-  '/api/product',
-  '/api/categories',
-  '/api/auth/login', // Perbaiki endpoint login
-  '/api/register',
-  '/api/',
+  '/product',
+  '/categories',
+  '/auth/login',
+  '/seller',
 ];
 
 // Simpan fungsi refreshAccessToken dari AuthContext
 let refreshAccessTokenFn = null;
 
+// Export setAuthContext untuk digunakan di AuthContext
 export const setAuthContext = (context) => {
+  if (!context?.refreshAccessToken) {
+    console.warn('setAuthContext: refreshAccessToken function is missing in context');
+    return;
+  }
   refreshAccessTokenFn = context.refreshAccessToken;
 };
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const isPublic = publicEndpoints.some((endpoint) => config.url.startsWith(endpoint));
+    const isPublic = publicEndpoints.some((endpoint) => config.url.includes(endpoint));
 
     if (!isPublic) {
       const token = localStorage.getItem('Admintoken');
       if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
       } else {
-        console.warn(`Tidak ada token ditemukan untuk endpoint: ${config.url}`);
+        console.warn(`No token for non-public endpoint: ${config.url}`);
       }
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    console.error('Request interceptor error:', error);
+    return Promise.reject(error);
+  }
 );
 
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (
-      error.response?.status === 401 &&
-      !publicEndpoints.some((endpoint) => originalRequest.url.startsWith(endpoint)) &&
-      !originalRequest._retry
-    ) {
+    const isPublic = publicEndpoints.some((endpoint) => originalRequest.url.includes(endpoint));
+
+    if (error.response?.status === 401 && !isPublic && !originalRequest._retry) {
       originalRequest._retry = true;
       if (refreshAccessTokenFn) {
-        console.log('Mencoba refresh token...');
-        const refreshed = await refreshAccessTokenFn();
-        if (refreshed) {
-          console.log('Token berhasil diperbarui');
-          originalRequest.headers['Authorization'] = `Bearer ${localStorage.getItem('Admintoken')}`;
-          return axiosInstance(originalRequest);
+        try {
+          const refreshed = await refreshAccessTokenFn();
+          if (refreshed) {
+            originalRequest.headers['Authorization'] = `Bearer ${localStorage.getItem('Admintoken')}`;
+            return axiosInstance(originalRequest);
+          }
+        } catch (refreshError) {
+          console.error('Token refresh error:', refreshError.message);
         }
       }
-      console.error('Permintaan tidak diizinkan. Mengarahkan ke login...');
+
       localStorage.removeItem('Admintoken');
       localStorage.removeItem('AdminRefreshToken');
       localStorage.removeItem('AdminUser');
-      if (window.location.pathname !== '/user/login') {
-        window.location.href = '/user/login';
+
+      const user = JSON.parse(localStorage.getItem('AdminUser') || '{}');
+      const loginPath = user?.role === 'USER' ? '/user/login' : '/seller/login';
+      if (window.location.pathname !== loginPath) {
+        window.location.href = loginPath;
       }
+      return Promise.reject(new Error('Session expired, please login again'));
     }
-    return Promise.reject(error);
+
+    const errorMessage = error.response?.data?.message || 'Server error occurred';
+    return Promise.reject(new Error(errorMessage));
   }
 );
 

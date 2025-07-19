@@ -16,7 +16,6 @@ const ChatPages = () => {
 
   return (
     <>
-      <Main>
         <Navbar />
         {isAuthenticated ? (
           <ChatComponents />
@@ -31,7 +30,6 @@ const ChatPages = () => {
             </button>
           </div>
         )}
-      </Main>
       <Footer />
     </>
   );

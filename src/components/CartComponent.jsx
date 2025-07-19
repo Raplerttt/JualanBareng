@@ -287,7 +287,7 @@ const Cart = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen bg-gray-50">
+      <div className="min-h-screen flex justify-center items-center h-screen bg-gray-50">
         <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1 }}>
           <FaSpinner className="text-indigo-600 text-4xl" />
         </motion.div>
@@ -311,7 +311,7 @@ const Cart = () => {
 
   if (!cart || !cart.CartItems.length) {
     return (
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center bg-gray-50">
+      <div className="min-h-screen mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center bg-gray-50">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
           <p className="text-gray-600 text-lg">Keranjang Anda kosong</p>
           <button

@@ -2,7 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import SellerRegistPages from "../pages/SellerRegisterPage";
 import SellerLoginPages from "../pages/SellerLoginPage";
-import SellerDashboard from "../pages/DashboardPages";
+import SellerDashboard from "./pages/DashboardSeller";
 import ProtectedSellerRoute from "../hooks/ProtectedRouteSeller";
 
 function SellerRoutes() {

@@ -29,14 +29,14 @@ const OrdersPage = () => {
 
     const fetchOrders = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken');
         const response = await axios.get('/orders', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setOrders(response.data.data || []);
       } catch (err) {
         console.error('Gagal mengambil pesanan:', err);
-        setError(err.response?.data?.message || 'Gagal memuat pesanan');
+        setError(err.response?.data?.message || 'Gagal memuat pesanan. Silakan coba lagi nanti.');
       } finally {
         setLoading(false);
       }
@@ -47,7 +47,7 @@ const OrdersPage = () => {
 
   const handlePayNow = async (orderId, paymentMethod) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       const response = await axios.post(
         `/payment/snap-token/${orderId}`,
         { paymentMethod },
@@ -75,32 +75,28 @@ const OrdersPage = () => {
         onSuccess: async (result) => {
           toast.success('Pembayaran berhasil!');
           try {
-            const token = localStorage.getItem('token');
-        
-            // Kirim PATCH untuk menandai pembayaran sebagai COMPLETED
             await axios.patch(
               `/payment/update-status/${orderId}`,
               { status: 'COMPLETED' },
-              { headers: { Authorization: `Bearer ${token}` } }
+              { headers: { Authorization: `Bearer ${token}` } },
             );
-        
-            // Update state orders di frontend
+
             setOrders((prev) =>
               prev.map((o) =>
                 o.id === orderId
                   ? {
                       ...o,
-                      payments: [{ ...o.payments[0], status: 'COMPLETED' }],
+                      payments: [{ ...o.payments?.[0], status: 'COMPLETED' }],
                       status: 'DIPROSES',
                     }
                   : o,
-              )
+              ),
             );
           } catch (error) {
             console.error('Gagal update status setelah sukses bayar:', error);
-            toast.error('Gagal memperbarui status pembayaran');
+            toast.error('Gagal memperbarui status pembayaran. Silakan hubungi dukungan.');
           }
-        },        
+        },
         onPending: () => toast('Pembayaran tertunda. Silakan selesaikan pembayaran.'),
         onError: (result) => {
           toast.error('Pembayaran gagal. Silakan coba lagi.');
@@ -110,29 +106,53 @@ const OrdersPage = () => {
       });
     } catch (err) {
       console.error('Gagal memulai pembayaran:', err);
-      toast.error(err.message || 'Gagal memulai pembayaran');
+      toast.error(err.message || 'Gagal memulai pembayaran. Silakan coba lagi.');
+    }
+  };
+
+  const handleConfirmReceived = async (orderId) => {
+    try {
+      const token = localStorage.getItem('Admintoken');
+      await axios.patch(
+        `/orders/${orderId}`,
+        { status: 'SELESAI' },
+        { headers: { Authorization: `Bearer ${token}` } },
+      );
+      toast.success('Pesanan berhasil dikonfirmasi sebagai selesai!');
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === orderId ? { ...o, status: 'SELESAI' } : o,
+        ),
+      );
+    } catch (err) {
+      console.error('Gagal mengkonfirmasi pesanan selesai:', err);
+      toast.error(err.response?.data?.message || 'Gagal mengkonfirmasi pesanan selesai.');
     }
   };
 
   const handleCancelOrder = async (orderId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await axios.patch(
         `/orders/${orderId}`,
         { status: 'DIBATALKAN' },
         { headers: { Authorization: `Bearer ${token}` } },
       );
-      toast.success('Pesanan berhasil dibatalkan!');
+      toast.success('Pesanan berhasil Vince');
       setOrders((prev) =>
         prev.map((o) =>
           o.id === orderId
-            ? { ...o, status: 'DIBATALKAN', payments: [{ ...o.payments[0], status: 'DIBATALKAN' }] }
+            ? {
+                ...o,
+                status: 'DIBATALKAN',
+                payments: o.payments?.length ? [{ ...o.payments[0], status: 'DIBATALKAN' }] : [],
+              }
             : o,
         ),
       );
     } catch (err) {
       console.error('Gagal membatalkan pesanan:', err);
-      toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan');
+      toast.error(err.response?.data?.message || 'Gagal membatalkan pesanan.');
     }
   };
 
@@ -141,18 +161,18 @@ const OrdersPage = () => {
       state: {
         orderId: order.id,
         orderDetails: order,
-        selectedItems: order.orderDetails.map((item) => ({
-          Product: { id: item.productId, productName: item.product?.productName },
+        selectedItems: (order.orderDetails || []).map((item) => ({
+          Product: { id: item.productId, productName: item.product?.productName || 'Produk tidak tersedia' },
           quantity: item.quantity,
         })),
-        paymentMethod: order.payments?.[0]?.method,
-        paymentStatus: order.payments?.[0]?.status,
+        paymentMethod: order.payments?.[0]?.method || 'Tidak diketahui',
+        paymentStatus: order.payments?.[0]?.status || 'Tidak diketahui',
       },
     });
   };
 
   const handleOpenFeedbackModal = (orderId, productId, sellerId, productName) => {
-    setFeedbackModal({ orderId, productId, sellerId, productName });
+    setFeedbackModal({ orderId, productId, sellerId, productName: productName || 'Produk tidak tersedia' });
     setRatings((prev) => ({ ...prev, [productId]: prev[productId] || 0 }));
     setComments((prev) => ({ ...prev, [productId]: prev[productId] || '' }));
   };
@@ -167,7 +187,7 @@ const OrdersPage = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       const response = await axios.post(
         '/feedbacks',
         {
@@ -183,15 +203,14 @@ const OrdersPage = () => {
 
       if (response.status === 200 || response.status === 201) {
         toast.success('Feedback berhasil dikirim!');
-        setFeedbackModal(null); // Close feedback modal
-        setSuccessModal(true); // Show success popup
         setFeedbackModal(null);
+        setSuccessModal(true);
         setOrders((prev) =>
           prev.map((o) =>
             o.id === orderId
               ? {
                   ...o,
-                  orderDetails: o.orderDetails.map((item) =>
+                  orderDetails: (o.orderDetails || []).map((item) =>
                     item.productId === productId ? { ...item, hasFeedback: true } : item,
                   ),
                 }
@@ -206,15 +225,21 @@ const OrdersPage = () => {
   };
 
   const filteredOrders = orders.filter((order) => {
-    const orderStatus = order.status;
-    const hasCompletedPayment = order.payments?.some((p) => p.status === 'COMPLETED');
-    const hasPendingPayment = order.payments?.some((p) => p.status === 'PENDING');
-    const hasFailedPayment = order.payments?.some((p) => p.status === 'DIBATALKAN');
+    const orderStatus = order.status || 'PENDING';
+    const paymentStatus = order.payments?.[0]?.status || 'PENDING';
 
-    if (activeTab === 'pending') return hasPendingPayment && orderStatus === 'PENDING';
-    if (activeTab === 'inprogress') return orderStatus === 'DIPROSES' || orderStatus === 'DIKIRIM';
-    if (activeTab === 'completed') return hasCompletedPayment || orderStatus === 'SELESAI';
-    if (activeTab === 'cancelled') return hasFailedPayment || orderStatus === 'DIBATALKAN';
+    if (activeTab === 'pending') {
+      return orderStatus === 'PENDING' && paymentStatus === 'PENDING';
+    }
+    if (activeTab === 'inprogress') {
+      return orderStatus === 'DIPROSES' || orderStatus === 'DIKIRIM';
+    }
+    if (activeTab === 'completed') {
+      return orderStatus === 'SELESAI' && paymentStatus === 'COMPLETED';
+    }
+    if (activeTab === 'cancelled') {
+      return orderStatus === 'DIBATALKAN' || paymentStatus === 'DIBATALKAN';
+    }
     return false;
   });
 
@@ -234,11 +259,13 @@ const OrdersPage = () => {
   };
 
   const formatDate = (dateString) =>
-    new Date(dateString).toLocaleString('id-ID', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    });
+    dateString
+      ? new Date(dateString).toLocaleString('id-ID', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric',
+        })
+      : 'Tanggal tidak tersedia';
 
   if (loading) {
     return (
@@ -299,7 +326,7 @@ const OrdersPage = () => {
                   {
                     name: 'Menunggu Pembayaran',
                     id: 'pending',
-                    count: orders.filter((o) => o.payments?.[0]?.status === 'PENDING' && o.status === 'PENDING').length,
+                    count: orders.filter((o) => o.status === 'PENDING' && o.payments?.[0]?.status === 'PENDING').length,
                   },
                   {
                     name: 'Dalam Proses',
@@ -309,13 +336,14 @@ const OrdersPage = () => {
                   {
                     name: 'Selesai',
                     id: 'completed',
-                    count: orders.filter((o) => o.payments?.[0]?.status === 'COMPLETED' && o.status === 'SELESAI').length,
+                    count: orders.filter((o) => o.status === 'SELESAI' && o.payments?.[0]?.status === 'COMPLETED').length,
                   },
                   {
                     name: 'Dibatalkan',
                     id: 'cancelled',
-                    count: orders.filter((o) => o.payments?.[0]?.status === 'DIBATALKAN' || o.status === 'DIBATALKAN')
-                      .length,
+                    count: orders.filter(
+                      (o) => o.status === 'DIBATALKAN' || o.payments?.[0]?.status === 'DIBATALKAN',
+                    ).length,
                   },
                 ].map((tab) => (
                   <button
@@ -385,7 +413,8 @@ const OrdersPage = () => {
                           <span className="font-medium">Tanggal Pesanan:</span> {formatDate(order.createdAt)}
                         </p>
                         <p>
-                          <span className="font-medium">Total:</span> Rp {order.totalAmount.toLocaleString('id-ID')}
+                          <span className="font-medium">Total:</span> Rp{' '}
+                          {(order.totalAmount || 0).toLocaleString('id-ID')}
                         </p>
                         <p className="flex items-center">
                           <FaCreditCard className="mr-2 h-4 w-4 text-indigo-600" />
@@ -405,15 +434,15 @@ const OrdersPage = () => {
                     </div>
                     <div className="mb-4">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">Item Pesanan:</h4>
-                      {order.orderDetails?.length > 0 ? (
+                      {(order.orderDetails || []).length > 0 ? (
                         <ul className="text-sm text-gray-600 space-y-1">
                           {order.orderDetails.map((item, idx) => (
                             <li key={idx} className="flex justify-between items-center">
                               <span>
-                                {item.product?.productName || 'Produk tidak tersedia'} (x{item.quantity}) - Rp{' '}
-                                {item.subtotal.toLocaleString('id-ID')}
+                                {item.product?.productName || 'Produk tidak tersedia'} (x{item.quantity || 0}) - Rp{' '}
+                                {(item.subtotal || 0).toLocaleString('id-ID')}
                               </span>
-                              {activeTab === 'completed' && !item.hasFeedback && (
+                              {activeTab === 'completed' && !item.hasFeedback && order.status === 'SELESAI' && (
                                 <motion.button
                                   whileHover={{ scale: 1.05 }}
                                   whileTap={{ scale: 0.95 }}
@@ -441,7 +470,7 @@ const OrdersPage = () => {
                       )}
                     </div>
                     <div className="flex justify-end space-x-4">
-                      {order.status === 'PENDING' && (
+                      {order.status === 'PENDING' && order.payments?.[0]?.status === 'PENDING' && (
                         <>
                           <motion.button
                             whileHover={{ scale: 1.05 }}
@@ -461,6 +490,17 @@ const OrdersPage = () => {
                             Batalkan Pesanan
                           </motion.button>
                         </>
+                      )}
+                      {order.status === 'DIKIRIM' && order.payments?.[0]?.status === 'COMPLETED' && (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold flex items-center gap-2 hover:bg-green-700 transition-colors"
+                          onClick={() => handleConfirmReceived(order.id)}
+                        >
+                          <FaCheckCircle className="text-sm" />
+                          Diterima
+                        </motion.button>
                       )}
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -544,6 +584,14 @@ const OrdersPage = () => {
                 <FaCheckCircle className="text-green-500 text-5xl mb-4" />
                 <h3 className="text-lg font-bold text-gray-900 mb-2">Feedback Berhasil Dikirim!</h3>
                 <p className="text-sm text-gray-600 text-center">Terima kasih atas ulasan Anda.</p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 transition-colors"
+                  onClick={() => setSuccessModal(false)}
+                >
+                  Tutup
+                </motion.button>
               </motion.div>
             </div>
           )}

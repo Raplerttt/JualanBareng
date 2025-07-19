@@ -23,7 +23,9 @@ const OrderConfirmation = () => {
   } = state || {};
 
   // State untuk data pesanan
-  const [orderId, setOrderId] = useState(stateOrderId || (queryOrderId ? parseInt(queryOrderId.split('-')[1], 10) : null));
+  const [orderId, setOrderId] = useState(
+    stateOrderId || (queryOrderId ? queryOrderId : null)
+  );  
   const [orderDetails, setOrderDetails] = useState(stateOrderDetails || null);
   const [paymentMethod, setPaymentMethod] = useState(statePaymentMethod || '');
   const [paymentStatus, setPaymentStatus] = useState(statePaymentStatus || queryStatus || 'PENDING');
@@ -40,7 +42,7 @@ const OrderConfirmation = () => {
 
     const fetchOrderData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken');
         if (!token) {
           throw new Error('Silakan login untuk melihat pesanan.');
         }

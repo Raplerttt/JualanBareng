@@ -354,7 +354,7 @@ const Navbar = () => {
                       className="h-8 w-8 rounded-full object-cover"
                       src={
                         user.photo
-                          ? `http://localhost:3000/uploads/users/${user.photo}`
+                          ? `http://localhost:3000/${user.photo}`
                           : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || user.email || "User")}&background=3B82F6&color=FFFFFF`
                       }
                       alt="Profil pengguna"

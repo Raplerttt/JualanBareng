@@ -157,7 +157,6 @@ const OrderDetailsPage = () => {
       const payload = {
         reportType: reportForm.reportType,
         subjectType: reportForm.subjectType,
-        subjectId: Number(orderId),
         description: reportForm.description,
         ...(user.role === "USER" ? { userId: user.id } : { sellerId: user.id }),
       };

@@ -1,15 +1,15 @@
-import React, { useState, useCallback, useContext } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import axios from "../../utils/axios";
-import { AuthContext } from "../auth/authContext";
-import toast from "react-hot-toast";
+import React, { useState, useCallback, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { AuthContext } from '../auth/authContext';
+import { AuthService } from '../auth/authService';
 
-const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
+const LoginPage = ({ buttonText = 'Masuk' }) => {
   const navigate = useNavigate();
   const { login } = useContext(AuthContext);
 
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +25,7 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
     const newErrors = {};
 
     if (!email || !/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Format email tidak valid";
+      newErrors.email = 'Format email tidak valid';
     }
 
     if (
@@ -35,7 +35,7 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
       !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/.test(password)
     ) {
       newErrors.password =
-        "Password harus 8–30 karakter, mengandung huruf besar, kecil, angka, dan simbol";
+        'Password harus 8–30 karakter, mengandung huruf besar, kecil, angka, dan simbol';
     }
 
     return newErrors;
@@ -48,56 +48,29 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
 
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
-      toast.error("Periksa kembali input Anda");
+      toast.error('Periksa kembali input Anda');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const res = await axios.post(
-        "/auth/login",
-        { email: formData.email, password: formData.password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      // Handle various response structures
-      let accessToken, refreshToken, user;
-      if (res.data.data) {
-        // Structure: { data: { accessToken, refreshToken, user } }
-        ({ accessToken, refreshToken, user } = res.data.data);
-      } else if (res.data.token && res.data.data) {
-        // Structure: { token, data }
-        accessToken = res.data.token;
-        refreshToken = res.data.refreshToken || "";
-        user = res.data.data;
-      } else if (res.data.accessToken && res.data.user) {
-        // Structure: { accessToken, refreshToken, user }
-        ({ accessToken, refreshToken, user } = res.data);
-      } else {
-        throw new Error("Struktur respons API tidak dikenali");
-      }
+      const { accessToken, refreshToken, user } = await AuthService.login(formData.email, formData.password);
 
       if (!accessToken || !user) {
-        throw new Error("Respons tidak valid: accessToken atau user tidak ditemukan");
+        throw new Error('Respons tidak valid: accessToken atau user tidak ditemukan');
+      }      
+
+      if (!accessToken || !user) {
+        throw new Error('Respons tidak valid: accessToken atau user tidak ditemukan');
       }
 
-      if (user.role !== "SELLER") {
-        throw new Error("Akun ini bukan akun penjual");
-      }
-
-      // Save to localStorage
-      localStorage.setItem("Admintoken", accessToken);
-      localStorage.setItem("AdminRefreshToken", refreshToken || "");
-      localStorage.setItem("AdminUser", JSON.stringify(user));
-
-      // Call login from AuthContext
-      login(accessToken, refreshToken, user);
-      toast.success("Login berhasil!");
-      navigate("/seller/dashboard");
+      login(accessToken, refreshToken || '', user);
+      toast.success('Login berhasil!');
+      navigate(user.role === 'SELLER' ? '/seller/dashboard' : '/registrations');
     } catch (error) {
       const errorMessage =
-        error.response?.data?.message || error.message || "Terjadi kesalahan saat login. Silakan coba lagi.";
+        error.response?.data?.message || error.message || 'Terjadi kesalahan saat login. Silakan coba lagi.';
       setErrors({ general: errorMessage });
       toast.error(errorMessage);
     } finally {
@@ -141,8 +114,8 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
         />
         <div className="flex items-center justify-between flex-wrap gap-2">
           <span className="text-sm text-gray-600">
-            Belum punya akun?{" "}
-            <Link to="/seller/register" className="text-indigo-600 hover:underline">
+            Belum punya akun?{' '}
+            <Link to="/seller/register" className="text-[#80CBC4] hover:underline">
               Daftar
             </Link>
           </span>
@@ -151,22 +124,22 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={isSubmitting}
-            className={`px-6 py-2 bg-indigo-600 text-white rounded-full font-semibold hover:bg-indigo-700 transition-colors duration-200 ${
-              isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+            className={`px-6 py-2 bg-[#80CBC4] text-white rounded-full font-semibold hover:bg-[#3fcec0] transition-colors duration-200 ${
+              isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
-            {isSubmitting ? "Memuat..." : buttonText}
+            {isSubmitting ? 'Memuat...' : buttonText}
           </motion.button>
         </div>
       </form>
 
       <div className="mt-4 text-center">
-        <Link to="/forgot-password" className="text-indigo-600 hover:underline text-sm">
+        <Link to="/forgot-password" className="text-[#80CBC4] hover:underline text-sm">
           Lupa Kata Sandi?
         </Link>
       </div>
       <div className="mt-2 text-center">
-        <Link to="/user/login" className="text-indigo-600 hover:underline text-sm">
+        <Link to="/user/login" className="text-[#80CBC4] hover:underline text-sm">
           Masuk sebagai Pengguna
         </Link>
       </div>
@@ -174,7 +147,7 @@ const AuthFormSellerLogin = ({ buttonText = "Masuk" }) => {
   );
 };
 
-const InputField = ({ label, name, value, onChange, error, type = "text" }) => (
+const InputField = ({ label, name, value, onChange, error, type = 'text' }) => (
   <div>
     <label htmlFor={name} className="block text-sm font-medium text-gray-700 mb-1">
       {label}
@@ -185,8 +158,8 @@ const InputField = ({ label, name, value, onChange, error, type = "text" }) => (
       name={name}
       value={value}
       onChange={onChange}
-      className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 ${
-        error ? "border-red-500" : ""
+      className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#80CBC4] focus:border-[#80CBC4] transition-all duration-200 ${
+        error ? 'border-red-500' : ''
       }`}
       aria-invalid={!!error}
       aria-describedby={error ? `${name}-error` : undefined}
@@ -215,12 +188,12 @@ const PasswordField = ({
     <div className="relative">
       <input
         id={name}
-        type={showPassword ? "text" : "password"}
+        type={showPassword ? 'text' : 'password'}
         name={name}
         value={value}
         onChange={onChange}
-        className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 ${
-          error ? "border-red-500" : ""
+        className={`block w-full py-2 px-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#80CBC4] focus:border-[#80CBC4] transition-all duration-200 ${
+          error ? 'border-red-500' : ''
         }`}
         aria-invalid={!!error}
         aria-describedby={error ? `${name}-error` : undefined}
@@ -228,10 +201,10 @@ const PasswordField = ({
       <button
         type="button"
         onClick={togglePasswordVisibility}
-        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-indigo-600"
-        aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 hover:text-[#80CBC4]"
+        aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
       >
-        {showPassword ? "🙈" : "👁️"}
+        {showPassword ? '🙈' : '👁️'}
       </button>
     </div>
     {error && (
@@ -242,4 +215,4 @@ const PasswordField = ({
   </div>
 );
 
-export default AuthFormSellerLogin;
+export default LoginPage;

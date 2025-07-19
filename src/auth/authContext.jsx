@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../../utils/axios';
+import { toast } from 'react-hot-toast';
 
 // Membuat AuthContext dengan nilai default
 export const AuthContext = createContext({
@@ -20,7 +21,7 @@ export const AuthContext = createContext({
  * @param {React.ReactNode} props.children - Komponen anak yang akan dibungkus
  */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // { id: string, email: string, role: 'USER' | 'SELLER' }
+  const [user, setUser] = useState(null); // { id, email, role, sellerId }
   const [token, setToken] = useState(null); // Admin token
   const [refreshToken, setRefreshToken] = useState(null); // Refresh token
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -46,7 +47,13 @@ export const AuthProvider = ({ children }) => {
         if (storedUser) {
           const parsedUser = JSON.parse(storedUser);
           if (parsedUser && parsedUser.id && ['USER', 'SELLER'].includes(parsedUser.role)) {
-            setUser(parsedUser);
+            // Map user.id ke sellerId untuk role SELLER
+            const updatedUser = {
+              ...parsedUser,
+              sellerId: parsedUser.role === 'SELLER' ? parsedUser.id : null,
+            };
+            setUser(updatedUser);
+            localStorage.setItem('AdminUser', JSON.stringify(updatedUser));
           } else {
             localStorage.removeItem('AdminUser'); // Bersihkan data pengguna yang tidak valid
           }
@@ -72,17 +79,26 @@ export const AuthProvider = ({ children }) => {
    */
   const login = (accessToken, refreshToken, userData) => {
     if (!accessToken || !userData?.id || !['USER', 'SELLER'].includes(userData?.role)) {
-      console.error('Data login tidak valid');
+      console.error('Data login tidak valid:', { accessToken, userData });
+      toast.error('Data login tidak valid');
       return;
     }
 
+    // Map user.id ke sellerId untuk role SELLER
+    const updatedUser = {
+      ...userData,
+      sellerId: userData.role === 'SELLER' ? userData.id : null,
+    };
+
     localStorage.setItem('Admintoken', accessToken);
     localStorage.setItem('AdminRefreshToken', refreshToken || '');
-    localStorage.setItem('AdminUser', JSON.stringify(userData));
+    localStorage.setItem('AdminUser', JSON.stringify(updatedUser));
     setToken(accessToken);
     setRefreshToken(refreshToken || null);
-    setUser(userData);
+    setUser(updatedUser);
     setIsAuthenticated(true);
+    toast.success('Login berhasil');
+    console.log('Login berhasil, user:', updatedUser);
   };
 
   /**
@@ -96,6 +112,8 @@ export const AuthProvider = ({ children }) => {
     setRefreshToken(null);
     setUser(null);
     setIsAuthenticated(false);
+    toast.success('Logout berhasil');
+    console.log('Logout dilakukan');
   };
 
   /**
@@ -104,11 +122,18 @@ export const AuthProvider = ({ children }) => {
    */
   const updateUser = (userData) => {
     if (!userData?.id || !['USER', 'SELLER'].includes(userData?.role)) {
-      console.error('Data pengguna tidak valid untuk pembaruan');
+      console.error('Data pengguna tidak valid untuk pembaruan:', userData);
+      toast.error('Data pengguna tidak valid');
       return;
     }
-    localStorage.setItem('AdminUser', JSON.stringify(userData));
-    setUser(userData);
+    // Map user.id ke sellerId untuk role SELLER
+    const updatedUser = {
+      ...userData,
+      sellerId: userData.role === 'SELLER' ? userData.id : null,
+    };
+    localStorage.setItem('AdminUser', JSON.stringify(updatedUser));
+    setUser(updatedUser);
+    console.log('User diperbarui:', updatedUser);
   };
 
   /**
@@ -119,13 +144,14 @@ export const AuthProvider = ({ children }) => {
     if (!refreshToken) {
       console.error('Tidak ada refresh token tersedia');
       logout();
+      toast.error('Sesi berakhir, silakan login kembali');
       return false;
     }
 
     try {
       const response = await axios.post(`${API_URL}/auth/refresh-token`, { refreshToken });
       const { accessToken, newRefreshToken } = response.data;
-      
+
       localStorage.setItem('Admintoken', accessToken);
       if (newRefreshToken) {
         localStorage.setItem('AdminRefreshToken', newRefreshToken);
@@ -133,13 +159,16 @@ export const AuthProvider = ({ children }) => {
       }
       setToken(accessToken);
       setIsAuthenticated(true);
+      console.log('Refresh token berhasil');
       return true;
     } catch (err) {
-      console.error('Gagal memperbarui token:', err);
+      console.error('Gagal memperbarui token:', err.message);
       logout();
+      toast.error('Sesi berakhir, silakan login kembali');
       return false;
     }
   };
+
 
   return (
     <AuthContext.Provider
@@ -152,7 +181,6 @@ export const AuthProvider = ({ children }) => {
         login,
         logout,
         updateUser,
-        refreshAccessToken,
       }}
     >
       {children}

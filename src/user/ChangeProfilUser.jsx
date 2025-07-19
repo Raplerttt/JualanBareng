@@ -14,7 +14,7 @@ const ChangeProfileUser = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
+  const [imageBase64, setImageBase64] = useState(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
@@ -39,17 +39,20 @@ const ChangeProfileUser = () => {
         });
 
         const userData = response.data.user || response.data.data?.user || response.data;
+        console.log("Fetched user data:", userData); // Debugging
         if (!userData?.id) {
           throw new Error("Data pengguna tidak valid");
         }
 
         setEditedUser({
-          fullName: userData.fullName,
-          email: userData.email,
-          phoneNumber: userData.phoneNumber,
+          fullName: userData.fullName || "",
+          email: userData.email || "",
+          phoneNumber: userData.phoneNumber || "",
+          photoBase64: userData.photoBase64 || userData.photo || "",
         });
         setLoading(false);
       } catch (error) {
+        console.error("Fetch error:", error.response?.data); // Debugging
         setError(error.response?.data?.message || "Gagal memuat profil");
         setLoading(false);
       }
@@ -66,8 +69,26 @@ const ChangeProfileUser = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
+      // Validasi ukuran dan tipe file
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Ukuran file tidak boleh lebih dari 5MB");
+        return;
+      }
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        toast.error("File harus berupa JPEG atau PNG");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result;
+        if (!base64String.match(/^data:image\/(png|jpeg|jpg);base64,/)) {
+          toast.error("Format gambar tidak valid (harus PNG atau JPEG)");
+          return;
+        }
+        setImageBase64(base64String);
+        setImagePreview(URL.createObjectURL(file));
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -87,48 +108,60 @@ const ChangeProfileUser = () => {
       }
 
       setLoading(true);
-      const formData = new FormData();
-      formData.append("fullName", editedUser.fullName || "");
-      formData.append("email", editedUser.email || "");
-      formData.append("phoneNumber", editedUser.phoneNumber || "");
-      if (imageFile) {
-        formData.append("photo", imageFile);
+      const userDataToSend = {
+        fullName: editedUser.fullName?.trim() || "",
+        email: editedUser.email?.trim() || "",
+        phoneNumber: editedUser.phoneNumber?.trim() || "",
+        ...(imageBase64 && { photoBase64: imageBase64 }),
+      };
+
+      // Validasi frontend sesuai dengan validateUser.js
+      if (!userDataToSend.fullName) {
+        throw new Error("Nama lengkap wajib diisi");
+      }
+      if (!userDataToSend.email || !/\S+@\S+\.\S+/.test(userDataToSend.email)) {
+        throw new Error("Format email tidak valid");
+      }
+      if (!userDataToSend.phoneNumber) {
+        throw new Error("Nomor telepon wajib diisi");
+      }
+      if (imageBase64 && !imageBase64.match(/^data:image\/(png|jpeg|jpg);base64,/)) {
+        throw new Error("Format photoBase64 tidak valid");
       }
 
-      await axios.put(`/users/${user.id}`, formData, {
+      const response = await axios.put(`/users/${user.id}`, userDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+          "Content-Type": "application/json",
         },
       });
 
-      const response = await axios.get("/users", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("DATA USER:", response.data);
-
       const userData = response.data.user || response.data.data?.user || response.data;
+      console.log("Updated user data:", userData); // Debugging
       if (!userData?.id) {
         throw new Error("Data pengguna tidak valid setelah pembaruan");
       }
 
       localStorage.setItem("AdminUser", JSON.stringify(userData));
       setEditedUser({
-        fullName: userData.fullName,
-        email: userData.email,
-        phoneNumber: userData.phoneNumber,
+        fullName: userData.fullName || "",
+        email: userData.email || "",
+        phoneNumber: userData.phoneNumber || "",
+        photoBase64: userData.photoBase64 || userData.photo || "",
       });
       setIsEditing(false);
       setImagePreview(null);
-      setImageFile(null);
+      setImageBase64(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
       toast.success("Profil berhasil diperbarui");
       setLoading(false);
     } catch (error) {
-      setError(error.response?.data?.message || "Gagal menyimpan profil");
-      toast.error(error.response?.data?.message || "Gagal menyimpan profil");
+      console.error("Save error:", error.response?.data); // Debugging
+      const errorMessage = error.response?.data?.message || error.message || "Gagal menyimpan profil";
+      setError(errorMessage);
+      toast.error(errorMessage);
       setLoading(false);
     }
   };
@@ -137,12 +170,13 @@ const ChangeProfileUser = () => {
     setIsEditing(!isEditing);
     if (isEditing) {
       setEditedUser({
-        fullName: user.fullName,
-        email: user.email,
-        phoneNumber: user.phoneNumber,
+        fullName: user.fullName || "",
+        email: user.email || "",
+        phoneNumber: user.phoneNumber || "",
+        photoBase64: user.photoBase64 || user.photo || "",
       });
       setImagePreview(null);
-      setImageFile(null);
+      setImageBase64(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
@@ -184,6 +218,15 @@ const ChangeProfileUser = () => {
     );
   }
 
+  // Tentukan URL gambar profil
+  const photoUrl = imagePreview
+    ? imagePreview
+    : user.photoBase64 || user.photo
+    ? user.photoBase64?.startsWith("data:image") || user.photo?.startsWith("data:image")
+      ? user.photoBase64 || user.photo // Base64
+      : `http://localhost:3000/${user.photoBase64 || user.photo}` // Path file
+    : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "Pengguna")}&background=80CBC4&color=FFFFFF`;
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -202,7 +245,7 @@ const ChangeProfileUser = () => {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={toggleEdit}
+              onClick={isEditing ? handleSave : toggleEdit}
               className="px-6 py-3 bg-white text-[#80CBC4] rounded-full font-medium text-base hover:bg-gray-100 transition-all shadow-md flex items-center"
             >
               {isEditing ? (
@@ -233,14 +276,13 @@ const ChangeProfileUser = () => {
             <div className="relative group">
               <div className="w-40 h-40 rounded-full bg-gradient-to-br from-[#80CBC4] to-[#4BA8A0] p-1.5 shadow-lg">
                 <img
-                  src={
-                    imagePreview ||
-                    (user.photo
-                      ? `http://localhost:3000/uploads/users/${user.photo}`
-                      : `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "Pengguna")}&background=80CBC4&color=FFFFFF`)
-                  }
+                  src={photoUrl}
                   alt="Profil"
                   className="w-full h-full rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || "Pengguna")}&background=80CBC4&color=FFFFFF`;
+                  }}
                 />
               </div>
               {isEditing && (
@@ -255,7 +297,7 @@ const ChangeProfileUser = () => {
               )}
               <input
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png"
                 ref={fileInputRef}
                 onChange={handleImageChange}
                 className="hidden"
@@ -290,7 +332,7 @@ const ChangeProfileUser = () => {
                   />
                 ) : (
                   <div className="w-full px-5 py-3 bg-gray-50 rounded-2xl border border-gray-200 shadow-sm text-base text-gray-800">
-                    {user.fullName || "-"}
+                    {editedUser.fullName || "-"}
                   </div>
                 )}
               </div>
@@ -312,7 +354,7 @@ const ChangeProfileUser = () => {
                   />
                 ) : (
                   <div className="w-full px-5 py-3 bg-gray-50 rounded-2xl border border-gray-200 shadow-sm text-base text-gray-800">
-                    {user.email || "-"}
+                    {editedUser.email || "-"}
                   </div>
                 )}
               </div>
@@ -353,9 +395,16 @@ const ChangeProfileUser = () => {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={handleSave}
-                  className="px-6 py-3 bg-[#80CBC4] text-white rounded-full hover:bg-[#4BA8A0] transition-all flex items-center text-base font-medium shadow-md"
+                  disabled={loading}
+                  className={`px-6 py-3 bg-[#80CBC4] text-white rounded-full hover:bg-[#4BA8A0] transition-all flex items-center text-base font-medium shadow-md ${
+                    loading ? "opacity-50 cursor-not-allowed" : ""
+                  }`}
                 >
-                  <FiSave className="mr-2" />
+                  {loading ? (
+                    <FaSpinner className="mr-2 animate-spin" />
+                  ) : (
+                    <FiSave className="mr-2" />
+                  )}
                   Simpan Perubahan
                 </motion.button>
               </div>

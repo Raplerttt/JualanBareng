@@ -128,7 +128,7 @@ const ProductsSection = ({
       formData.append("image", newProduct.image);
       formData.append("categoryId", parseInt(newProduct.categoryId));
       formData.append("description", newProduct.description?.trim() || "Tidak ada deskripsi");
-      formData.append("sellerId", parseInt(sellerId));
+      formData.append("sellerId", (sellerId));
 
       await axios.post("/product", formData, {
         headers: {

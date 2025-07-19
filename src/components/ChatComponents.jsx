@@ -331,7 +331,7 @@ const ChatComponents = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <svg
-              className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400"
+              className="absolute left-2.5 top-2.5 h-4 w-4 text-black-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -385,7 +385,7 @@ const ChatComponents = () => {
             <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
               <div className="flex items-center">
                 <img
-                  src={selectedSeller.profilePic}
+                  src={`http://localhost:3000/${selectedSeller.profilePic}`}
                   alt={selectedSeller.name}
                   className="w-10 h-10 rounded-full mr-3"
                 />

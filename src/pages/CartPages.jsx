@@ -16,7 +16,6 @@ const CartPages = () => {
 
   return (
     <>
-      <Main>
         <Navbar />
         {isAuthenticated ? (
           <CartComponent />
@@ -31,7 +30,6 @@ const CartPages = () => {
             </button>
           </div>
         )}
-      </Main>
       <Footer />
     </>
   );

@@ -1,7 +1,6 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom'; // Untuk navigasi
 import FavoriteComponents from '../components/FavoriteComponents';
-import Main from '../components/layout/Main';
 import Navbar from '../components/layout/NavbarComponents';
 import Footer from '../components/layout/FooterComponents';
 import { AuthContext } from '../auth/authContext'; // Pastikan path ini sesuai
@@ -16,8 +15,7 @@ const FavoritePages = () => {
 
     return (
         <>
-            <Main>
-                <Navbar />
+            <Navbar />
                 {isAuthenticated ? (
                     <FavoriteComponents />
                 ) : (
@@ -28,7 +26,6 @@ const FavoritePages = () => {
                         </button>
                     </div>
                 )}
-            </Main>
             <Footer />
         </>
     );

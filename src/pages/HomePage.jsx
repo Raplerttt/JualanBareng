@@ -23,7 +23,7 @@ const HomePages = () => {
     });
 
     // Check if user is logged in
-    const storedUser  = JSON.parse(localStorage.getItem("user"));
+    const storedUser  = (localStorage.getItem("Admintoken"));
     if (storedUser ) {
       setUser (storedUser );
     }
@@ -31,7 +31,6 @@ const HomePages = () => {
 
   return (
     <>
-      <Main>
       <Navbar user={user} />
         {/* Kirim user ke Navbar agar bisa menyesuaikan tampilan */}
         <div data-aos="fade-up">
@@ -50,7 +49,6 @@ const HomePages = () => {
           <PromoList />
         </div>
       <Footer />
-      </Main>
     </>
   );
 };

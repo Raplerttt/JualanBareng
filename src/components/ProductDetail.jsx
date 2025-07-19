@@ -23,7 +23,7 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('Admintoken');
         const response = await axios.get(`/product/${id}`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
@@ -56,7 +56,7 @@ const ProductDetail = () => {
       return;
     }
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await axios.post(
         `/favorites/${id}`,
         { isFavorite: !isFavorite },
@@ -78,10 +78,10 @@ const ProductDetail = () => {
     }
     setAddingToCart(true);
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('Admintoken');
       await axios.post(
         '/cart',
-        { productId: parseInt(id), quantity: parseInt(quantity) },
+        { productId: (id), quantity: parseInt(quantity) },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAddingToCart(false);

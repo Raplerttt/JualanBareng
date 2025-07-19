@@ -1,8 +1,7 @@
-// RecommendedStore.jsx
 import React, { useState, useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
 import { motion } from 'framer-motion';
-import axios from '../../utils/axios'; // Pastikan path ini benar
+import axios from '../../utils/axios'; // Pastikan path ini sesuai
 
 const StoreCard = ({ store, index }) => {
   const { ref, inView } = useInView({ threshold: 0.1, triggerOnce: true });
@@ -18,17 +17,17 @@ const StoreCard = ({ store, index }) => {
       <a href={`/detail-store/${store.id}`} className="w-full flex flex-col items-center">
         <div className="w-32 h-32 md:w-40 md:h-40 bg-gray-700 flex justify-center items-center rounded-full overflow-hidden shadow-lg group-hover:shadow-xl transition-all duration-500 group-hover:scale-105">
           <img
-            src={`http://localhost:3000/${store.image}`}
-            alt={store.name}
+            src={store.photo}
+            alt={store.storeName}
             className="w-3/4 h-3/4 object-contain rounded-full transition-all duration-500 group-hover:scale-110"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = `https://dummyimage.com/150x150/cccccc/000000.png&text=No+Image`;
-            }}            
+            }}
           />
         </div>
         <h3 className="mt-6 text-xl font-medium text-gray-200 group-hover:text-orange-400 transition-colors duration-300">
-          {store.name}
+          {store.storeName}
         </h3>
       </a>
     </motion.div>
@@ -42,27 +41,26 @@ const RecommendedStore = () => {
 
   useEffect(() => {
     let isMounted = true;
-    const fetchRecommendedStores = async () => {
+    const fetchSellers = async () => {
       try {
-        let response = await axios.get('/recommended-stores');
-        let data = response.data.data;
-  
-        // Fallback jika kosong, ambil semua seller
-        if (!data || data.length === 0) {
-          response = await axios.get('/seller'); // pastikan endpoint ini tersedia
-          data = response.data.data;
-        }
-  
+        const response = await axios.get('/seller?page=1&limit=10&status=VERIFIED');
+        console.log('Response:', response.data); // Debugging
+        const data = response.data.data || response.data; // Fallback jika data tidak nested
+
         if (!isMounted) return;
-  
+
         const mappedStores = data.map((store) => ({
           id: store.id,
-          name: store.name || store.storeName || 'Unknown',
-          image: store.image || `https://via.placeholder.com/150?text=${encodeURIComponent(store.name || store.storeName || 'Store')}`,
+          storeName: store.storeName || 'Unknown',
+          photo: store.photo
+            ? `http://localhost:3000/${store.photo}`
+            : `https://via.placeholder.com/150?text=${encodeURIComponent(store.storeName || 'Store')}`,
         }));
-  
+
+        console.log('Mapped stores:', mappedStores); // Debugging
         setStores(mappedStores);
       } catch (err) {
+        console.error('Error:', err.response?.data); // Debugging
         if (isMounted) {
           setError(err.response?.data?.message || 'Gagal mengambil data toko');
         }
@@ -72,14 +70,13 @@ const RecommendedStore = () => {
         }
       }
     };
-  
-    fetchRecommendedStores();
-  
+
+    fetchSellers();
+
     return () => {
       isMounted = false;
     };
   }, []);
-  
 
   if (loading) {
     return (
@@ -106,14 +103,20 @@ const RecommendedStore = () => {
         viewport={{ once: true }}
         className="text-center mb-16"
       >
-        <h2 className="text-4xl font-bold text-black mb-4">Recommended Stores</h2>
+        <h2 className="text-4xl font-bold text-black mb-4">Toko Terverifikasi</h2>
         <div className="w-24 h-1 bg-orange-500 mx-auto"></div>
       </motion.div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-        {stores.map((store, index) => (
-          <StoreCard key={store.id} store={store} index={index} />
-        ))}
+        {stores.length > 0 ? (
+          stores.map((store, index) => (
+            <StoreCard key={store.id} store={store} index={index} />
+          ))
+        ) : (
+          <div className="text-center text-gray-500 col-span-full">
+            Tidak ada toko yang tersedia.
+          </div>
+        )}
       </div>
     </section>
   );
