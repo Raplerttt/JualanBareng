@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: 'https://jualanbareng-api-e249c10b3bbe.herokuapp.com/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -12,7 +12,7 @@ const publicEndpoints = [
   '/product',
   '/categories',
   '/auth/login',
-  '/seller',
+  '/auth/register',
 ];
 
 // Simpan fungsi refreshAccessToken dari AuthContext
