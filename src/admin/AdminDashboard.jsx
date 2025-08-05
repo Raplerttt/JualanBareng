@@ -24,7 +24,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = 'https://jualanbareng-api-e249c10b3bbe.herokuapp.com/api';
 
   useEffect(() => {
     const fetchData = async () => {

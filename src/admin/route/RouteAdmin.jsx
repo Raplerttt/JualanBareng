@@ -6,6 +6,8 @@ import BugReports from "../BugReports";
 import FraudCases from "../FraudCases";
 import Settings from "../Setting";
 import VerifikasiPendaftaran from "../VerifikasiPendaftaran";
+import PencairanDana from "../PencairanDana";
+import DetailPencairanDana from "../DetailPencairanDana";
 
 function AdminRoutes() {
   return (
@@ -55,6 +57,22 @@ function AdminRoutes() {
         element={
           <ProtectedRoute>
             <VerifikasiPendaftaran />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="escrow-to-seller"
+        element={
+          <ProtectedRoute>
+            <PencairanDana />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="escrow-to-seller/:id"
+        element={
+          <ProtectedRoute>
+            <DetailPencairanDana />
           </ProtectedRoute>
         }
       />

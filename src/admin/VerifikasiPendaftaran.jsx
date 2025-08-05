@@ -17,7 +17,7 @@ const VerifikasiPendaftaran = () => {
   const [page, setPage] = useState(1);
   const [meta, setMeta] = useState({ totalPages: 1, totalSellers: 0 });
 
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = 'https://jualanbareng-api-e249c10b3bbe.herokuapp.com/api';
 
   const fetchSellers = async () => {
     try {

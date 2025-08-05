@@ -6,7 +6,8 @@ const Sidebar = () => {
 
   const navItems = [
     { path: '/admin', icon: '📊', label: 'Dashboard' },
-    { path: '/admin/verifikasi-pendaftaran', icon: '📊', label: 'Verifikasi Pendaftaran' },
+    { path: '/admin/verifikasi-pendaftaran', icon: '📝', label: 'Verifikasi Pendaftaran' },
+    { path: '/admin/escrow-to-seller', icon: '💰', label: 'Pencairan Dana' },
     { path: '/admin/bug-reports', icon: '🐛', label: 'Pengaduan' },
     { path: '/admin/settings', icon: '⚙️', label: 'Pengaturan' },
   ];
