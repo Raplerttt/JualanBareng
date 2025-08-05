@@ -1,6 +1,6 @@
 import axios from '../../utils/axios';
 
-const API_URL = 'http://localhost:3000/api'; // Sesuaikan dengan URL API Anda
+const API_URL = 'https://jualanbareng-api-e249c10b3bbe.herokuapp.com/api'; // Sesuaikan dengan URL API Anda
 
 export const AuthService = {
   login: async (email, password) => {
@@ -55,6 +55,20 @@ export const AuthService = {
       throw new Error(error.response?.data?.message || 'Gagal memuat produk');
     }
   },
+
+  deleteProduct: async (productId) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.delete(`${API_URL}/product/${productId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal menghapus produk');
+    }
+  },  
   
   addProduct: async (productData) => {
     const token = localStorage.getItem('Admintoken');
@@ -73,7 +87,7 @@ export const AuthService = {
   
   getOrders: async () => {
     try {
-      const response = await axios.get(`${API_URL}/orders`);
+      const response = await axios.get(`${API_URL}/orders/myorder`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Gagal memuat order');
@@ -270,5 +284,146 @@ export const AuthService = {
     });
     return response.data;
   },
+
+  getForums: async () => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.get(`${API_URL}/forum`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data; // Return the data if the request is successful
+    } catch (error) {
+      console.error('Error fetching forums:', error); // Log the error for debugging
+      throw error; // Optionally rethrow the error or return a fallback value
+    }
+  },
+
+  createThread: async (data) => {
+    const token = localStorage.getItem('Admintoken');
+    const response = await axios.post(`${API_URL}/forum-threads`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  },
   
+  getAllThreads: async () => {
+    const token = localStorage.getItem('Admintoken');
+    const response = await axios.get(`${API_URL}/forum-threads`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
+  getThreadById: async (id) => {
+    const token = localStorage.getItem('Admintoken');
+    const response = await axios.get(`${API_URL}/forum-threads/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
+  deleteThread: async (id) => {
+    const token = localStorage.getItem('Admintoken');
+    const response = await axios.delete(`${API_URL}/forum-threads/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  },
+
+  updateThread: async (id, data) => {
+    const token = localStorage.getItem('Admintoken');
+    const response = await axios.put(`${API_URL}/forum-threads/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  },
+
+  createReply: async (threadId, data) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.post(`${API_URL}/forum-replies`, { ...data, threadId }, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal menambahkan reply');
+    }
+  },
+
+  updateReply: async (replyId, data) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.put(`${API_URL}/forum-replies/${replyId}`, data, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal memperbarui reply');
+    }
+  },
+
+  deleteReply: async (replyId) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.delete(`${API_URL}/forum-replies/${replyId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal menghapus reply');
+    }
+  },
+
+  // === LIKE / UNLIKE ===
+  likeThread: async (threadId) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.post(`${API_URL}/forum-likes/${threadId}/like`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal menyukai thread');
+    }
+  },
+
+  unlikeThread: async (threadId) => {
+    const token = localStorage.getItem('Admintoken');
+    try {
+      const response = await axios.post(`${API_URL}/forum-likes/${threadId}/unlike`, {}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Gagal membatalkan like thread');
+    }
+  },
 };

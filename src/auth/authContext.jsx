@@ -27,7 +27,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const API_URL = 'http://localhost:3000/api';
+  const API_URL = 'https://jualanbareng-api-e249c10b3bbe.herokuapp.com/api';
 
   // Memuat data otentikasi dari localStorage saat komponen di-mount
   useEffect(() => {
